@@ -1,0 +1,121 @@
+dataset: freshretailnet
+dataset_version: LT
+spec: docs/implementation_specs/01_freshretailnet.md
+
+provenance:
+  measured_on: 2026-08-22
+  train_parquet: {rows: 7869549, dt_min: 2023-06-05, dt_max: 2025-07-13, days: 770, series: 22939}
+  eval_parquet:  {rows:   70000, dt_min: 2025-07-14, dt_max: 2025-07-20, days:   7, series: 10000}
+  note: >
+    官方 eval 恰为 2025-07-14 起的 7 个自然日，且 2025-07-14 是周一，与本项目
+    weekly-Monday origin + 7 日视界的统一接口天然对齐。LT 是本项目 FreshRetailNet
+    唯一可做"官方评估复现"的版本。
+
+source_paths:
+  train: data/external/freshretailnet_lt/data/train.parquet
+  eval:  data/external/freshretailnet_lt/data/eval.parquet
+
+primary_key:
+  series_id_expr: "store_id + '_' + product_id"
+  time_column: dt
+
+target:
+  column: sale_amount
+  name: observed_sales_daily
+  aggregation: sum_over_target_window
+  censoring: true          # 缺货时段为观测下界，非真实需求
+
+calendar:
+  origin_frequency: weekly
+  origin_anchor: monday
+  horizon_days: 7
+  target_window: "[origin, origin + 6]"
+
+splits:
+  # 测试窗 = 官方 eval，不得改动。验证窗由 train 尾部切出，供协议 B 选型。
+  train:      {origins: [2023-06-12, 2025-06-09]}
+  validation: {origins: [2025-06-16, 2025-07-07]}   # 4 个周一
+  test:       {origins: [2025-07-14, 2025-07-14]}   # 官方 eval，1 个 origin
+  test_is_official_eval: true
+
+history:
+  feature_history_start: 2023-06-05
+  state_history_start: 2023-06-05
+  history_window_days: 365        # 覆盖完整年度周期
+
+metric:
+  integer_units: false   # §4.3 路径 A(整数计数) / B(连续量)
+  # y_min 依赖**目标定义**而非数据集本身：日销量与 7 日求和是不同量纲。
+  # §4.3 的阶梯规则须对实际建模目标各算一次。
+  y_min_by_target:
+    daily_sale_amount:  {y_min: 0.1, bind_rate: 0.0560}   # 日值，中位 0.7
+    weekly_sum_7d:      {y_min: 1.0, bind_rate: 0.0199}   # 7 日求和，中位 8.67
+  y_min: 1.0                      # 主建模目标 = 7 日求和
+  y_min_bind_rate: 0.0199
+  y_min_rule: >
+    00_global_conventions.md §4.3 阶梯规则，在**训练窗的建模目标**上计算。
+    注意：日值口径下 y_min=1.0 的 bind_rate=0.3935（不可用），周求和口径下
+    仅 0.0199（可用）。切换目标粒度时必须重算，不可沿用。
+  w_scheme: flat                  # 无成本字段 → w_i ≡ 1.0
+  w_value: 1.0
+  category_column: third_category_id   # 校准器 L1 分组键
+
+data_semantics:
+  stock_status_polarity: "hours_stock_status == 1 表示缺货（已实测，见 00_global_conventions.md §5.4.4）"
+  is_stockout_expr: "hours_stock_status[hour]"
+  s_paper_expr: "1 - hours_stock_status[hour]"
+  operating_hours: [6, 22]
+  recovery_constraint: "d = y*s_paper + d_hat*(1-s_paper)；有货小时必须原样保留观测销量"
+
+capabilities:
+  annual_seasonality: true        # 770 天 > 1 年
+  stockout_mask: true
+  inventory_qty: false
+  purchase_orders: false
+  eta: false
+  decision_layer: false
+  replay: false
+
+future_known_covariates:
+  # 在 origin 时点可预知的协变量，允许进入目标窗特征
+  allowed: [holiday_flag, discount, activity_flag]
+  forbidden: [precpt, avg_temperature, avg_humidity, avg_wind_level]
+  rationale: >
+    节假日与已排定的营销计划在补货决策前可知（来源论文 §4.2 亦作此假设）；
+    天气实况属目标窗内实现值，直接使用构成泄漏。若要用天气，必须换成
+    origin 时点可得的预报值，本轮不做。
+
+statistical_power:
+  # 实测：naive-last vs roll-mean-4，经残差校准器，按 series 聚类配对 bootstrap
+  measured_on: 2026-08-22
+  validation: {n_rows: 41422, n_series: 10600, mde: 0.00112, base_npl: 0.08531}
+  test:       {n_rows: 10000, n_series: 10000, mde: 0.00146, base_npl: 0.07185}
+  relative_mde: {validation: 0.0131, test: 0.0203}
+  active_series_share: 0.462      # 评估 origin 上活跃序列 / 全量 22,939
+  note: >
+    名义 22,939 条序列，但面板密度 0.31，评估 origin 上仅 46.2% 活跃。
+    有效样本因此**少于 Zhao**（10,600 vs 25,775 序列），相对 MDE 亦略差
+    （1.31% vs 1.09%）。选择本数据集作 TSFM 切入点的理由不是样本量，
+    而是上下文长度（见 tsfm_suitability）。
+  cold_start_rows: {validation: 0, test: 0}
+  cold_start_note: >
+    全期有 11,396 行冷启动，但**全部落在更早期**；2025-06/07 的评估 origin
+    上没有新序列进入，故本数据集在评估窗**完全没有冷启动证据**。
+    冷启动结论不能由 fresh_lt 承载。
+
+tsfm_suitability:
+  median_context_daily: 236       # 日粒度，最长 770
+  median_context_weekly: 105
+  verdict: adequate
+  note: >
+    Chronos-2 的 default_context_length = 2048。本数据集日粒度中位 236、
+    最长 770 个观测，是全部五个数据集中唯一上下文充足者
+    （zhao 月度仅 8、mendeley 日度仅 2，对基础模型不可用）。
+
+gates: []
+
+notes:
+  - "协议 A 使用官方 train/eval 边界；协议 B 额外使用上面的 validation 窗，二者结果分开报告。"
+  - "50K 的时间跨度 (2024-03-28..2024-06-25) 完全落在 LT 训练窗内部，两版本不可拼接。"
+  - "残差校准器 L0 层可达（实测 L0=72.2%、L1=27.6%、L2=0.1%），与 zhao 的 100% L1 形成对照。"
+  - "不完整周（n_days != 7）42,638 行已排除出目标，记 TARGET_INCOMPLETE_WEEK。"

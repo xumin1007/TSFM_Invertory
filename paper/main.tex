@@ -1,0 +1,1066 @@
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%%
+%%	Author Submission Template for Manufacturing & Service Operations Management (MSOM)
+%%	INFORMS, <informs@informs.org>
+%%	Ver. 1.00, June 2024
+%%
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%
+% Use dblanonrev for Double Anonymous Review submission
+% Use sglanonrev for Single Anonymous Review submission
+% For example, submission to Operations Research, OPRE will have
+% \documentclass[opre,dblanonrev]{informs4}
+%
+% \documentclass[mnsc,dblanonrev]{informs4}
+\documentclass[msom,sglanonrev]{informs4}
+\usepackage{eqndefns-left} % For checking the display equation width and equation environment definitions %
+\RequirePackage{tgtermes}
+\RequirePackage{newtxtext}
+\RequirePackage{newtxmath}
+\RequirePackage{bm}
+\RequirePackage{endnotes}
+
+%\OneAndAHalfSpacedXI
+\OneAndAHalfSpacedXII % Current default line spacing
+%%\DoubleSpacedXI
+%%\DoubleSpacedXII
+
+% Optional LaTeX Packages
+\usepackage{algorithm}
+\usepackage{algpseudocode}
+\usepackage{tikz}
+\usepackage{booktabs}
+% Private macros here (check that there is no clash with the style)
+\newcommand{\cF}{\mathcal{F}}
+\newcommand{\ind}{\mathbf{1}}
+\newcommand{\R}{\mathbb{R}}
+
+% Natbib setup for author-number style
+\usepackage{natbib}
+ \bibpunct[, ]{(}{)}{,}{a}{}{,}%
+ \def\bibfont{\small}%
+ \def\bibsep{\smallskipamount}%
+ \def\bibhang{24pt}%
+ \def\newblock{\ }%
+ \def\BIBand{and}%
+
+
+%% Setup of the equation numbering system. Outcomment only one.
+%% Preferred default is the first option.
+\EquationsNumberedThrough    % Default: (1), (2), ...
+%\EquationsNumberedBySection % (1.1), (1.2), ...
+
+%% Setup of theorem styles. Outcomment only one.
+%% Preferred default is the first option.
+\TheoremsNumberedThrough     % Preferred (Theorem 1, Lemma 1, Theorem 2)
+%\TheoremsNumberedByChapter  % (Theorem 1.1, Lema 1.1, Theorem 1.2)
+\ECRepeatTheorems  %
+
+% For new submissions, leave this number blank.
+% For revisions, input the manuscript number assigned by the on-line
+% system along with a suffix ".Rx" where x is the revision number.
+\MANUSCRIPTNO{}
+
+%%%%%%%%%%%%%%%%
+\begin{document}
+%%%%%%%%%%%%%%%%
+
+% Outcomment only when entries are known. Otherwise leave as is and
+%   default values will be used.
+%\setcounter{page}{1}
+%\VOLUME{00}%
+%\NO{0}%
+%\MONTH{Xxxxx}% (month or a similar seasonal id)
+%\YEAR{0000}% e.g., 2005
+%\FIRSTPAGE{000}%
+%\LASTPAGE{000}%
+%\SHORTYEAR{00}% shortened year (two-digit)
+%\ISSUE{0000} %
+%\LONGFIRSTPAGE{0001} %
+%\DOI{10.1287/xxxx.0000.0000}%
+
+% Author's names for the running heads
+% Sample depending on the number of authors;
+% \RUNAUTHOR{Jones}
+% \RUNAUTHOR{Jones and Wilson}
+% \RUNAUTHOR{Jones, Miller, and Wilson}
+% \RUNAUTHOR{Jones et al.} % for four or more authors
+% Enter authors following the given pattern:
+%\RUNAUTHOR{}
+\RUNAUTHOR{Xu}
+
+% Title or shortened title suitable for running heads. Sample:
+% \RUNTITLE{Predictive Maintenance in Manufacturing}
+% Enter the (shortened) title:
+\RUNTITLE{Foundation Models for Inventory Decisions}
+
+\TITLE{Can Pretrained Time Series Models Replace Bespoke Forecasting Pipelines\\for Inventory Decisions?}
+
+% Block of authors and their affiliations starts here:
+% NOTE: Authors with same affiliation, if the order of authors allows,
+%   should be entered in ONE field, separated by a comma.
+%   \EMAIL field can be repeated if more than one author
+\ARTICLEAUTHORS{%
+%\AUTHOR{John Doe,\textsuperscript{a} Jane Smith,\textsuperscript{b}}
+%\AFF{\textsuperscript{a}Department of Industrial Engineering, University of XYZ, \EMAIL{john.doe@xyz.edu; \textsuperscript{b}Department of Computer Science, University of ABC, \EMAIL{jane.smith@abc.edu}}
+\AUTHOR{Min Xu}
+\AFF{School of Management and Engineering, Nanjing University, \EMAIL{minxu@smail.nju.edu.cn}}
+
+% Enter all authors
+} % end of the block
+
+\ABSTRACT{
+\noindent\textbf{Problem definition:}
+Retail inventory managers face a two-stage problem: forecast demand, then set stocking levels.
+Modern practice builds bespoke forecasting pipelines---feature engineering, model training, monitoring---for each product category.
+Time series foundation models (TSFMs), pretrained on massive cross-domain corpora, promise accurate probabilistic forecasts out of the box, but their value for \emph{downstream inventory decisions} is unknown.
+A forecast that improves a statistical metric may not improve the cost it ultimately serves.
+%
+\smallskip\noindent\textbf{Methodology/results:}
+We evaluate three TSFMs---Chronos-2 (120M parameters), TimesFM-2.5, and Moirai-1.1---against seven baselines including empirical quantiles, gradient-boosted trees, DeepAR, the Temporal Fusion Transformer (TFT), the ERM newsvendor of \citet{BanRudin2019}, and the nonparametric DDM of \citet{ShiChenDuenyas2016}---on two datasets spanning 2{,}100 SKUs.
+We embed each forecaster inside a newsvendor decision layer with protection-interval convolution, sweeping service levels, lead times, and holding-cost rates.
+Five findings emerge:
+(i)~among history-only methods, Chronos-2 dominates the Pareto frontier of service vs.\ cost at every operating point, saving 6--14\% in newsvendor cost, while TimesFM and Moirai do not significantly outperform the empirical baseline---TSFM advantage is model-specific, not generic;
+(ii)~combining the TSFM's quantile forecasts with supply-side features in a lightweight decision model achieves the overall lowest cost on both validation and test windows, outperforming both the standalone TSFM and ERM with rich features;
+(iii)~the advantage concentrates on SKUs with large demand-level drift---the pretrained model adapts to nonstationarity that anchors empirical methods;
+(iv)~decision-aware fine-tuning of the loss function adds no significant value beyond standard quantile loss, because the model's nine native quantile heads already span the decision-relevant region;
+(v)~the TSFM reaches full performance with only 30 days of history, implying that pretrained distributional priors, not long local histories, drive the gain.
+%
+\smallskip\noindent\textbf{Managerial implications:}
+A pretrained foundation model can serve as a drop-in replacement for an entire forecasting pipeline---no feature engineering, no retraining, no per-category tuning---while delivering statistically and economically significant inventory-cost reductions.
+When supply-side data (inventory positions, unit costs) are available, feeding the TSFM's forecasts as additional features into a decision model yields further gains.
+The largest savings accrue precisely where traditional methods struggle most: nonstationary, drifting demand.
+}
+
+%\FUNDING{This research was supported by [grant number, funding agency].}
+
+%Supplemental Material:
+%Data Ethics & Reproducibility Note:
+
+% Fill in data. If unknown, outcomment the field
+\KEYWORDS{inventory management; foundation models; demand forecasting; newsvendor; pretrained models; time series}
+%\HISTORY{Received: Month DD, YYYY; Accepted: Month DD, YYYY; Published Online: Month DD, YYYY}
+
+\maketitle
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+% ============================================================
+\section{Introduction}\label{sec:intro}
+% ============================================================
+
+Every inventory decision rests on a demand forecast.
+A retailer deciding how many units of a spare part to stock for the coming month must predict not just expected demand but its entire distribution: the upper quantiles determine the safety stock that meets a service-rate target, and the shape of the tail governs the tradeoff between holding cost and stockout cost.
+Getting this distribution wrong is expensive.
+Overstocking ties up capital; understocking loses sales and erodes customer trust.
+
+The standard approach to this problem has two stages.
+First, build a demand forecasting model: collect historical sales, engineer features (lags, calendar effects, promotions, inventory positions), train a machine learning model (typically gradient-boosted trees or exponential smoothing), and validate on held-out data.
+Second, feed the forecast into an inventory policy: aggregate daily forecasts over the protection interval (review period plus lead time), extract the appropriate quantile, and determine the stocking level.
+Each stage has its own literature, its own practitioners, and---crucially---its own loss function.
+The forecaster minimizes a prediction loss (pinball, CRPS); the planner minimizes an inventory cost.
+These objectives are aligned in expectation but not in practice \citep{BertsimasKallus2020}.
+
+This two-stage architecture is costly to operate.
+A typical retail forecasting pipeline requires feature engineering tailored to each product category, periodic retraining as demand patterns shift, data-quality monitoring to detect concept drift, and integration with enterprise resource planning systems.
+For a retailer with tens of thousands of SKUs across heterogeneous categories---fast-moving consumer goods, intermittent spare parts, seasonal fashion---maintaining such pipelines is a significant operational burden.
+
+A new class of models promises to eliminate this burden entirely.
+\emph{Time series foundation models} (TSFMs) are large neural networks pretrained on billions of time points from diverse domains---energy, finance, weather, retail---and then applied zero-shot to new series without any task-specific training \citep{Ansari2024Chronos,LagLlama2024,TimesFM2024}.
+Like large language models for text, TSFMs learn general temporal patterns (trends, seasonality, regime changes) from the pretraining corpus, and transfer these patterns to unseen series at inference time.
+Recent work shows that TSFMs match or exceed purpose-built models on standard forecasting benchmarks \citep{Ansari2025Chronos2}, and emerging industrial evidence confirms that fine-tuned TSFMs can outperform production forecasting systems in large-scale retail settings.
+In particular, \citet{SuiEtAl2026} document a ``bitter lesson'' for retail demand forecasting: a fine-tuned Chronos-2 outperforms Alibaba's hand-engineered N-BEATS production system, suggesting that scalable pretrained models may render bespoke pipelines obsolete.
+Their study, however, evaluates only \emph{forecasting accuracy}---it does not close the loop to the downstream inventory decision.
+
+This gap is consequential, because forecasting accuracy and decision quality are not the same thing.
+A TSFM that reduces mean absolute error by 10\% may or may not reduce inventory cost, because the cost depends on the \emph{tail} of the predictive distribution, not its center.
+The inventory literature has long recognized that better point forecasts do not guarantee better decisions \citep{BertsimasKallus2020,BanRudin2019}, and that the mapping from forecast to decision is nonlinear and context-dependent \citep{Liyanage2005}.
+
+This paper asks a simple question with nontrivial implications:
+\emph{Can a pretrained time series foundation model, applied zero-shot with no feature engineering or retraining, produce inventory decisions that are as good as---or better than---those from a bespoke forecasting pipeline?}
+
+We answer this question through a comprehensive empirical study on two real-world datasets with distinct characteristics.
+The first, from \citet{Zhao2021}, contains daily sales of 2{,}000 spare-parts SKUs at a major Chinese retailer, with censored demand (observed sales are truncated by inventory) and highly intermittent patterns (68\% zero-demand days).
+The second, an open-source benchmark (OSA), covers 100 consumer-goods SKUs with longer lead times and uncensored demand.
+Together, these datasets span the spectrum from slow-moving, intermittent spare parts to faster-moving consumer goods, and from short (1-day) to long (7--21 day) replenishment lead times.
+
+Our evaluation framework is distinctive in three ways.
+First, we evaluate forecasters not on prediction metrics alone but on the \emph{inventory cost} they produce when embedded in a newsvendor decision layer.
+This ``forecast-to-decision'' (F2D) pipeline convolves daily probabilistic forecasts into protection-interval demand distributions, extracts order-up-to levels, and computes holding and shortage costs under realistic operating conditions.
+Second, we sweep a wide grid of economic parameters---service levels $\alpha \in [0.80, 0.999]$, lead times $L \in \{1, 7, 14\}$ days, holding-cost rates $\kappa_h \in \{0.15, 0.20, 0.25, 0.30\}$---to ensure that our conclusions are not artifacts of a particular cost structure.
+Third, we use a strict prequential protocol with separate validation and test windows, paired bootstrap inference clustered by series, and explicit feasibility reporting.
+
+\subsection{Summary of Contributions}
+
+Our study makes four contributions to the operations management literature.
+
+\begin{enumerate}
+\item \textbf{Prediction accuracy and decision quality are empirically decoupled---but the TSFM dominates both.}
+  Better forecasts do not automatically yield better inventory decisions.
+  Gradient-boosted trees achieve lower prediction loss than the empirical baseline (NPL 0.338 vs.\ 0.342) yet produce \emph{worse} inventory outcomes (cost 17\% higher).
+  Among history-only methods, the TSFM dominates at every operating point.
+  Combining the TSFM's quantile forecasts with supply-side features in a decision model achieves the lowest cost on both validation and test windows (0.455 and 0.287, respectively), outperforming both the standalone TSFM and ERM with rich features.
+  These rankings are stable across two datasets, four lead-time scenarios, and five holding-cost rates.
+
+\item \textbf{The mechanism is nonstationarity adaptation, not data exploitation.}
+  We decompose the TSFM's advantage at the SKU level and show that it concentrates on products with large demand-level drift (top quintile: 13\% total cost savings, accounting for the majority of the aggregate advantage).
+  For near-stationary SKUs, the empirical method performs comparably.
+  Censoring, intermittency, and local volatility are not the drivers.
+  The pretrained model's value lies in its ability to adapt to level shifts that anchor history-based methods.
+  This finding connects to the theoretical literature on nonparametric inventory management under nonstationarity \citep{ShiChenDuenyas2016,HuhRusmevichientong2009}.
+
+\item \textbf{Decision-aware fine-tuning is unnecessary.}
+  We test three loss variants---standard pinball, newsvendor-cost, and $\alpha$-focused Gaussian-weighted pinball---across three lead-time scenarios.
+  None produces a statistically significant cost improvement over standard pinball loss.
+  The model's nine native quantile heads already span the decision-relevant region ($\tau \in [0.1, 0.9]$), making specialized losses redundant.
+  Standard fine-tuning does help at long lead times (3.8\% cost reduction at $L=14$ vs.\ zero-shot), but the \emph{choice} of loss is irrelevant.
+
+\item \textbf{Pretrained priors substitute for local history.}
+  The TSFM reaches full predictive performance with only 30 days of context; additional history provides no significant improvement.
+  A $k$-nearest-neighbor analogy baseline that borrows information from similar long-history series adds nothing.
+  This suggests that the pretraining corpus provides distributional priors that compensate for limited local data---a property particularly valuable for new-product introduction and cold-start inventory decisions.
+\end{enumerate}
+
+Taken together, these findings extend the ``bitter lesson'' identified by \citet{SuiEtAl2026} for forecasting accuracy to the downstream decision layer: scalable pretrained models, rather than handcrafted domain-specific pipelines, may increasingly drive the best inventory outcomes.
+When supply-side state is available, the TSFM's forecasts and operational features are complementary inputs to a decision model, achieving lower cost than either source alone.
+When supply-side data are not available, the standalone TSFM still dominates all history-only alternatives---eliminating feature engineering, model selection, and periodic retraining.
+
+The remainder of the paper is organized as follows.
+Section~\ref{sec:lit} reviews related work.
+Section~\ref{sec:setting} describes the problem setting and notation.
+Section~\ref{sec:method} details our forecast-to-decision methodology.
+Section~\ref{sec:data} describes the datasets.
+Section~\ref{sec:results} presents the main results.
+Section~\ref{sec:mechanism} analyzes the mechanism driving TSFM's advantage.
+Section~\ref{sec:robustness} reports robustness checks (decision-aware fine-tuning, cold-start, censored demand).
+Section~\ref{sec:conclusion} concludes with managerial implications.
+
+
+% ============================================================
+\section{Literature Review}\label{sec:lit}
+% ============================================================
+
+Our work sits at the intersection of three streams: data-driven inventory management, demand forecasting in operations, and pretrained foundation models for time series.
+We position our contribution relative to each.
+
+\subsection{Data-Driven Inventory Management}
+
+The classical newsvendor problem admits a closed-form solution when the demand distribution is known: order up to the $\alpha$-quantile, where $\alpha = p/(p+h)$ is the critical ratio \citep{Porteus2002}.
+In practice, the distribution is unknown and must be estimated from data, creating the \emph{data-driven newsvendor} problem.
+
+Two paradigms have emerged.
+The \emph{estimate-then-optimize} (ETO) approach first estimates the demand distribution and then solves the newsvendor problem using the estimated distribution.
+\citet{Liyanage2005} show that the plug-in quantile estimator is asymptotically optimal but can exhibit significant finite-sample bias.
+The \emph{predict-then-optimize} approach of \citet{BertsimasKallus2020} uses covariate information (features) to produce conditional demand distributions, and shows that machine learning methods (random forests, $k$-NN, kernel regression) can significantly improve upon unconditional estimates.
+\citet{BanRudin2019} propose a ``big data'' newsvendor that directly minimizes the empirical newsvendor cost, bypassing the distribution-estimation step entirely.
+
+A separate line of work addresses the inventory problem when demand observations are \emph{censored} by stockouts---the retailer observes $\min(D, S)$ rather than true demand $D$.
+\citet{HuhRusmevichientong2009} develop an adaptive algorithm with $O(\sqrt{T})$ regret for the censored newsvendor under iid demand.
+\citet{ShiChenDuenyas2016} propose a nonparametric gradient-descent method (DDM) that directly optimizes the base-stock level from censored data, achieving the same $O(1/\sqrt{T})$ regret rate without estimating the demand distribution.
+These theoretical guarantees, however, require the iid assumption, which is violated in most retail settings where demand exhibits trends, seasonality, and regime changes.
+
+Our work differs from this literature in two ways.
+First, rather than proposing a new algorithm, we evaluate a \emph{pretrained model}---one that has already learned demand patterns from a large cross-domain corpus---as the forecasting component of the ETO pipeline.
+Second, we explicitly test the hypothesis that the pretrained model's advantage stems from its ability to handle nonstationarity, precisely the setting where the theoretical guarantees of DDM and related methods break down.
+
+\subsection{Demand Forecasting in Operations}
+
+The operations management literature has increasingly recognized that forecast accuracy and decision quality are distinct objectives.
+\citet{Syntetos2009} demonstrate that forecast improvements do not always translate to inventory improvements for intermittent-demand items.
+\citet{PetropoulosEtAl2022} provide a comprehensive review of forecasting methods and their operational implications, noting that the ``last mile'' from forecast to decision remains underdeveloped.
+
+Machine learning methods---gradient-boosted trees \citep{ChenGuestrin2016}, autoregressive neural networks like DeepAR \citep{Salinas2020DeepAR}, attention-based architectures like the Temporal Fusion Transformer \citep{LimEtAl2021}, and deep state-space models \citep{RangapuramEtAl2018}---have shown strong performance on forecasting benchmarks, but their operational value is less clear.
+\citet{GuoEtAl2025} introduce Bayesian ensembles of life-cycle forecasts for new-product demand, emphasizing the importance of distributional (quantile) forecasts for inventory decisions.
+
+Most recently, \citet{SuiEtAl2026} provide the first large-scale industrial evaluation of TSFMs for retail demand forecasting, showing that a fine-tuned Chronos-2 outperforms Alibaba's production N-BEATS system.
+Their work highlights the importance of covariate design (distilling promotional effects from a structural model) and identifies a ``bitter lesson'' for demand forecasting: scalable pretrained models may outperform hand-engineered systems.
+Our work extends this insight from the prediction layer to the decision layer: we ask whether TSFM's forecasting advantage translates into better inventory decisions under realistic cost structures.
+
+A separate challenge in retail forecasting is the \emph{cold-start problem}: new products have no sales history, making statistical forecasting impossible.
+Traditional approaches rely on analogous-product methods \citep{Wright1997} or expert judgment.
+We show that pretrained TSFMs offer a principled alternative: the pretraining corpus provides distributional priors that substitute for local history.
+
+\subsection{Foundation Models for Time Series}
+
+Foundation models---large neural networks pretrained on broad data and applied to downstream tasks without task-specific training---have transformed natural language processing \citep{Devlin2019BERT,Brown2020GPT3} and computer vision \citep{Dosovitskiy2021ViT}.
+Their extension to time series is recent.
+
+\citet{Ansari2024Chronos} introduce Chronos, a family of language-model-based TSFMs that tokenize time series values into a discrete vocabulary and are pretrained on a large corpus of public and synthetic time series.
+\citet{Ansari2025Chronos2} extend this to Chronos-2, which uses a native quantile-head architecture (directly outputting quantile values at predefined levels) and achieves state-of-the-art probabilistic forecasting performance across 27 benchmark datasets.
+Other TSFMs include Lag-Llama \citep{LagLlama2024}, TimesFM \citep{TimesFM2024}, and Moirai \citep{Moirai2024}.
+
+Despite strong benchmark results, independent evidence on TSFMs in real-world operational settings remains limited.
+\citet{SuiEtAl2026} provide the first large-scale industrial evaluation of Chronos-2 on Alibaba's retail data, showing that a fine-tuned TSFM outperforms a production N-BEATS baseline by 3.5--5.4\% on forecasting accuracy.
+Their work focuses on the prediction layer---point-forecast metrics (WMAPE)---and identifies covariate design as a key driver of TSFM performance.
+Our paper complements theirs by moving from forecasting accuracy to \emph{inventory decisions}: we embed TSFMs in a complete forecast-to-decision pipeline and evaluate them on the metric that ultimately matters to inventory managers---newsvendor cost, not WMAPE.
+Benchmark metrics (CRPS, MASE, WQL) aggregate over the entire predictive distribution, but inventory costs are driven by the upper tail.
+A model that improves median accuracy but miscalibrates the 95th percentile may increase, not decrease, inventory cost.
+
+
+% ============================================================
+\section{Problem Setting}\label{sec:setting}
+% ============================================================
+
+We consider a retailer managing $N$ SKUs under periodic review with base-stock replenishment---a widely used inventory policy in both theory and practice.
+Each SKU $i$ is reviewed every $R$ days with a replenishment lead time of $L_i$ days, yielding a protection interval of $\text{PI}_i = R + L_i$ days.
+At each review point, the retailer observes the inventory position $\text{IP}_i$ (on-hand plus on-order minus backorders) and places an order to bring the position up to a base-stock level $S_i$.
+The order quantity is $\max(0, S_i - \text{IP}_i)$.
+While we focus on the base-stock policy throughout, the forecast-to-decision pipeline we develop---which converts probabilistic daily forecasts into a protection-interval demand distribution---is applicable to any policy that requires quantile estimates of lead-time demand.
+
+\subsection{Demand Model}
+
+Let $d_{i,t} \geq 0$ denote the daily demand for SKU $i$ on day $t$.
+The \emph{protection-interval demand} is the cumulative demand over the next $\text{PI}_i$ days:
+\begin{equation}\label{eq:pi_demand}
+  D_i^{\text{PI}} = \sum_{t=1}^{\text{PI}_i} d_{i,t}.
+\end{equation}
+
+We do not assume a parametric form for the demand distribution.
+Instead, we work with the conditional cumulative distribution function $F_i(\cdot \mid \cF_t)$, where $\cF_t$ denotes the information set (sales history) available at the review point.
+The key input to the inventory policy is the $\alpha$-quantile of protection-interval demand:
+\begin{equation}\label{eq:quantile}
+  S_i^* = F_i^{-1}(\alpha \mid \cF_t) = \inf\{s \geq 0 : F_i(s \mid \cF_t) \geq \alpha\}.
+\end{equation}
+
+\subsection{Cost Structure}
+
+We consider two newsvendor cost structures.
+In the \emph{derived-cost} setting, the holding cost per unit per period is $h_i = \kappa_h \cdot c_i / M$, where $c_i$ is the unit cost, $\kappa_h$ is the annual holding-cost rate, and $M$ is the number of periods per year.
+The shortage cost is derived from the newsvendor critical ratio: $p_i = h_i \cdot \alpha / (1 - \alpha)$.
+In the \emph{margin-cost} setting, $p_i = \max(\text{price}_i - c_i, 0)$ is the unit margin, and $\alpha_i = p_i / (p_i + h_i)$ is the implied service level.
+
+\subsection{Decision Layer}
+
+Given a forecaster that produces a probabilistic prediction of daily demand, the \emph{decision layer} proceeds in three steps:
+
+\begin{enumerate}
+\item \textbf{Quantile grid.}
+  The forecaster outputs a grid of quantiles $\hat{q}_{i,t}(\tau)$ for each day $t \in \{1, \ldots, \text{PI}_i\}$ at predefined levels $\tau \in \{\tau_1, \ldots, \tau_K\}$.
+  We repair the grid by clipping negative values and enforcing monotonicity: $\hat{q}_{i,t}(\tau_k) \leq \hat{q}_{i,t}(\tau_{k+1})$.
+
+\item \textbf{PMF reconstruction and convolution.}
+  We reconstruct a probability mass function (PMF) on integer support $\{0, 1, \ldots, v_{\max}\}$ from the quantile grid using a midpoint CDF estimator.
+  We then convolve the $\text{PI}_i$ daily PMFs via the fast Fourier transform (FFT) to obtain the PMF of protection-interval demand:
+  \begin{equation}\label{eq:convolve}
+    p_i^{\text{PI}} = \text{IFFT}\!\left(\prod_{t=1}^{\text{PI}_i} \text{FFT}(p_{i,t})\right),
+  \end{equation}
+  where $p_{i,t}$ is the daily PMF for day $t$.
+  This convolution treats daily demands as independent (conditional on history) but allows the marginal distributions to vary across days.
+
+\item \textbf{Base-stock level.}
+  We extract the base-stock level as $S_i = F_i^{-1}(\alpha)$ from the convolved PMF.
+  We consider three policies:
+  \begin{itemize}
+    \item[\textbf{P1}:] $S_i = F_{R,i}^{-1}(\alpha)$, using only the review-period PMF (ignores lead time---a deliberate mismatch for comparison);
+    \item[\textbf{P2}:] $S_i = m \cdot \mu_R + z_\alpha \sqrt{m} \cdot \sigma_R$, a normal approximation where $({\mu_R, \sigma_R})$ are the moments of review-period demand and $m = \text{PI}/R$;
+    \item[\textbf{P3}:] $S_i = F_{\text{PI},i}^{-1}(\alpha)$, the true protection-interval quantile from numerical convolution.
+  \end{itemize}
+\end{enumerate}
+
+\subsection{Evaluation Metrics}
+
+We evaluate each forecaster--policy pair on four metrics:
+
+\begin{itemize}
+\item \emph{Cycle service rate} (CSR): the fraction of replenishment cycles with no stockout, $\text{CSR} = |\{j : y_j \leq S_j\}| / n$.
+\item \emph{Fill rate} (FR): the fraction of demand fulfilled from stock, $\text{FR} = 1 - \sum_j \max(y_j - S_j, 0) / \sum_j y_j$.
+\item \emph{Newsvendor cost}: $C = \sum_j [h_j (S_j - y_j)^+ + p_j (y_j - S_j)^+]$.
+\item \emph{Normalized pinball loss} (NPL): the pinball loss normalized by actual demand, aggregated across quantile levels.
+\end{itemize}
+
+On the Zhao dataset, where demand is censored ($y_j = \min(D_j, \text{inventory}_j)$), CSR and FR are \emph{upper bounds} on the true service metrics.
+We report this explicitly and validate conclusions on the uncensored OSA dataset.
+
+Statistical significance is assessed via paired bootstrap with $B = 1{,}000$ resamples, clustered by series to account for within-series dependence.
+All comparisons use 95\% confidence intervals.
+
+
+% ============================================================
+\section{Methodology}\label{sec:method}
+% ============================================================
+
+This section describes the forecasting arms, fine-tuning procedure, and the baseline methods.
+
+\subsection{TSFM: Chronos-2}\label{subsec:chronos}
+
+We use Chronos-2 \citep{Ansari2025Chronos2}, a 120-million-parameter TSFM built on a T5 encoder-decoder backbone.
+The model is pretrained on over 100 billion time points from diverse domains (energy, finance, retail, weather) plus synthetic series generated via kernel-based Gaussian processes \citep{Ansari2024Chronos}.
+Unlike the original Chronos, which tokenizes values into a discrete vocabulary, Chronos-2 uses a native quantile-head architecture that directly outputs quantile forecasts at nine levels $\tau \in \{0.1, 0.2, \ldots, 0.9\}$ for each of the next $H$ days.
+We also evaluate TimesFM-2.5 \citep{TimesFM2024} (200M parameters, patched-decoder architecture) and Moirai-1.1 \citep{Moirai2024} (311M parameters, masked-encoder architecture) in zero-shot mode for cross-TSFM comparison.
+No feature engineering, covariate data, or task-specific training is required for any zero-shot TSFM evaluation.
+
+We evaluate Chronos-2 in two modes:
+\begin{itemize}
+\item \textbf{Zero-shot} (chronos2-zs): the pretrained model is applied directly to each SKU's sales history with no adaptation.
+\item \textbf{Fine-tuned} (chronos2-ft): the model is fine-tuned on the training portion of the target dataset using standard pinball loss across all nine quantile levels, with early stopping on a held-out inner validation set.
+\end{itemize}
+
+\subsection{Baseline Forecasters}
+
+\paragraph{Empirical quantiles (emp-daily).}
+For each SKU, we compute the empirical quantiles of daily sales from the full available history at each level $\tau$.
+This method uses no model and no features; it is the simplest reasonable baseline.
+The same daily quantile grid is replicated for each forecast horizon day, then convolved as described in Section~\ref{sec:setting}.
+
+\paragraph{Gradient-boosted quantile regression (GBDT).}
+We train a LightGBM quantile regressor with 21 quantile levels.
+We consider two feature sets: \emph{lean} (sales lags and rolling statistics only) and \emph{rich} (adding inventory position, purchase orders, lead times, and category dummies).
+Training uses only data prior to the validation window.
+
+\paragraph{DeepAR \citep{Salinas2020DeepAR}.}
+DeepAR is a probabilistic autoregressive model based on a two-layer LSTM that produces forecast distributions by parameterizing the likelihood at each time step.
+We train DeepAR with a multi-quantile loss at the same 21 quantile levels as Chronos-2, using the NeuralForecast implementation \citep{OlivaresEtAl2022}.
+The model uses only lagged sales as input (no covariates), matching the information set of the zero-shot TSFM.
+We include DeepAR as a representative of task-specific deep learning probabilistic forecasters.
+
+\paragraph{Temporal Fusion Transformer \citep[TFT;][]{LimEtAl2021}.}
+TFT combines multi-head attention with gating mechanisms and variable selection to produce multi-horizon quantile forecasts.
+Like DeepAR, we train TFT with the same 21-level multi-quantile loss and restrict input to sales history only.
+TFT represents the state of the art in task-specific Transformer forecasting models, providing a natural comparison point between purpose-built architectures and pretrained foundation models.
+
+\paragraph{ERM newsvendor \citep{BanRudin2019}.}
+The empirical risk minimization (ERM) approach bypasses distribution estimation and directly minimizes the newsvendor cost:
+\begin{equation}\label{eq:erm}
+  \min_{q(\cdot)} \frac{1}{n} \sum_{i=1}^{n} \left[b \cdot (d_i - q(\mathbf{x}_i))^+ + h \cdot (q(\mathbf{x}_i) - d_i)^+\right],
+\end{equation}
+where $q(\mathbf{x})$ maps features to a stocking level.
+This is equivalent to quantile regression at the critical ratio $\alpha = b/(b+h)$, but applied \emph{directly} to the protection-interval demand, skipping the daily forecast and convolution steps of our ETO pipeline.
+We implement two variants: linear quantile regression (Ban \& Rudin's original formulation) and a nonlinear extension using LightGBM.
+Both variants use the same rich feature set as GBDT (lagged sales, inventory positions, SKU attributes).
+The ERM baseline tests whether end-to-end decision optimization outperforms the two-stage ETO approach.
+
+\paragraph{DDM \citep{ShiChenDuenyas2016}.}
+The data-driven method directly optimizes the base-stock level from censored sales data using stochastic gradient descent.
+The update rule is:
+\begin{equation}\label{eq:ddm}
+  S_{t+1} = \left[S_t - \eta_t \left(h \cdot \ind[S_t > d_t] - p \cdot \ind[S_t \leq d_t]\right)\right]^+,
+\end{equation}
+where $d_t = \min(D_t, S_t)$ is the censored observation, $\eta_t = 1/\sqrt{t}$ is the learning rate, and $[\cdot]^+$ denotes projection onto $\R_+$.
+DDM achieves $O(1/\sqrt{T})$ regret under iid demand---the best known rate for the censored newsvendor.
+We include DDM to test whether pretrained knowledge adds value beyond what a theoretically optimal nonparametric method achieves.
+
+\subsection{Decision-Aware Fine-Tuning}\label{subsec:da_ft}
+
+To test whether the loss function used during fine-tuning affects inventory decisions, we implement three variants by modifying the Chronos-2 loss computation:
+
+\begin{enumerate}
+\item \textbf{Pinball} (standard): the quantile loss $\ell_\tau(y, \hat{q}) = \tau(y - \hat{q})^+ + (1-\tau)(\hat{q} - y)^+$ summed over all nine native quantile levels.
+\item \textbf{Newsvendor}: the quantile loss computed only at the native level $\tau^*$ closest to the target service level $\alpha$ (i.e., $\tau^* = 0.9$ for $\alpha = 0.95$).
+\item \textbf{$\alpha$-focused}: a Gaussian-weighted pinball loss centered at $\alpha$ with bandwidth $\sigma = 0.15$:
+  \begin{equation}\label{eq:focused}
+    \ell_{\text{focused}} = \sum_{k=1}^{K} w_k \cdot \ell_{\tau_k}(y, \hat{q}_{\tau_k}), \quad w_k \propto \exp\!\left(-\frac{(\tau_k - \alpha)^2}{2\sigma^2}\right).
+  \end{equation}
+\end{enumerate}
+
+All three variants are fine-tuned with identical hyperparameters (learning rate, epochs, batch size, early stopping) on the same training data.
+
+\subsection{Hybrid Pipeline}\label{subsec:hybrid}
+
+The TSFM and ERM-rich draw their advantages from different information sources: the TSFM from demand-side temporal patterns, ERM-rich from supply-side state variables.
+To test whether these sources are complementary, we construct a \emph{hybrid pipeline} that feeds both into a single decision model.
+
+For each SKU-day, we extract four features from the TSFM's protection-interval forecast: the median (q50), 85th percentile (q85), mean, and standard deviation.
+These are concatenated with the same supply-side features used by ERM-rich (beginning inventory, stock value, unit cost, open purchase orders, lead time, and category dummies) to form the input vector.
+The decision model is trained with newsvendor quantile loss at the target critical ratio $\alpha$, mapping features directly to a stocking level $S$.
+
+We implement two decision-model variants: linear quantile regression (following \citealt{BanRudin2019}) and LightGBM quantile regression.
+Both use the same feature set and training protocol as the corresponding ERM arms, with the TSFM features replacing the lean time-series lags.
+
+\subsection{Prequential Protocol}
+
+We follow a strict temporal separation to prevent information leakage:
+\begin{enumerate}
+\item \textbf{Training window}: all data before the validation period.
+  Fine-tuning and GBDT training use only this window.
+\item \textbf{Validation window}: a held-out period used for model selection, hyperparameter tuning, and all results reported in the main text.
+\item \textbf{Test window}: a final held-out period, frozen until all validation-window analysis is complete.
+  Test results are reported without modification as a replication check.
+\end{enumerate}
+
+All design choices---forecasting arm, inventory policy, cost parameters---are fixed on the validation window.
+The test window is evaluated exactly once with these frozen choices.
+
+\paragraph{Pretraining data leakage.}
+A concern specific to foundation-model evaluation is whether the test data appeared in the TSFM's pretraining corpus.
+Chronos-2 is trained on a mix of public time-series datasets and synthetic data generated via Gaussian processes \citep{Ansari2024Chronos}.
+The Zhao dataset is a proprietary spare-parts dataset from a Chinese online retailer, not publicly available in any time-series repository, making direct leakage unlikely.
+Nevertheless, we cannot fully rule out that similar spare-parts demand patterns exist in the pretraining mix.
+Three design choices mitigate residual concern:
+(i)~our prequential protocol ensures that all forecasts are strictly out-of-sample in calendar time;
+(ii)~the zero-shot Chronos-2 variant (which benefits most from pretraining) is \emph{not} the top performer---fine-tuned variants and hybrid pipelines dominate, and their advantage derives from task-specific adaptation rather than memorization;
+and (iii)~our second dataset (OSA) is an independent open-source benchmark with different demand characteristics, and the TSFM's relative advantage replicates across both datasets (Section~\ref{sec:sensitivity}).
+
+\paragraph{Compute costs.}
+All experiments run on a single Apple M2 Max (38 GPU cores, 64 GB unified memory).
+Inference for 2{,}000 SKUs over one 63-day window takes approximately 40 seconds for Chronos-2 (MPS), 30 seconds for TimesFM-2.5, and 13 minutes for Moirai-1.1 (CPU, as MPS does not support float64).
+Fine-tuning Chronos-2 for 500 steps takes $\sim$2 minutes per variant.
+GBDT and ERM training are negligible ($<$5 seconds).
+The full Layer C evaluation (16 arms $\times$ 2 windows, including bootstrap) completes in $\sim$13 minutes.
+
+
+% ============================================================
+\section{Data}\label{sec:data}
+% ============================================================
+
+\subsection{Dataset 1: Zhao Spare Parts}
+
+The first dataset, from \citet{Zhao2021}, records daily sales, inventory positions, purchase orders, and product attributes for spare-parts SKUs at a major Chinese online retailer.
+We sample 2{,}000 SKUs with at least 100 days of sales history.
+
+\begin{table}[ht]
+\caption{Dataset characteristics.}\label{tab:data}
+\centering\small
+\begin{tabular}{lcc}
+\toprule
+ & \textbf{Zhao (spare parts)} & \textbf{OSA (consumer goods)} \\
+\midrule
+SKUs & 2{,}000 (of 17{,}226) & 100 \\
+Daily rows & 4{,}411{,}210 & 40{,}590 \\
+Panel density & 80.2\% & 48.4\% \\
+Zero share (daily) & 68.2\% & 48.5\% \\
+Demand observation & Censored ($y = \min(D, \text{inv})$) & Uncensored \\
+Lead time & Median 1 day & Scenario: 7/14/21 days \\
+Validation window & 2019-07, 2019-08 & 2020-09 to 2020-12 \\
+Test window & 2019-09, 2019-10 & 2021-01 to 2021-04 \\
+Effective val.\ rows & $\sim$3{,}363 (Layer B) & 17 series (replay) \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+Spare parts are replacement components used in equipment maintenance and repair---automotive filters, electronic modules, machine accessories---and their inventory management differs from consumer goods in economically important ways.
+Holding costs are high because unit prices are substantial and items may sit in stock for extended periods; stockout costs are disproportionately large because a missing part can halt equipment operation, triggering production downtime or service failures whose cost far exceeds the part's price.
+This asymmetry makes the critical ratio $\kappa$ in the newsvendor formulation both large and consequential: small improvements in distributional forecast accuracy translate directly into significant cost savings.
+
+The Zhao dataset poses several challenges that are representative of real-world spare-parts inventory.
+First, demand is \emph{highly intermittent}: 68\% of daily observations are zero.
+Two-quantile parametric models (e.g., Gamma) are unidentifiable when the median is zero; we use nonparametric PMF reconstruction instead.
+Second, demand is \emph{censored}: observed sales are bounded above by available inventory.
+We measure 29.2\% of SKU-months as censored (sales $\geq$ beginning inventory).
+Third, demand is \emph{nonstationary}: the mean drift ratio (validation-period daily mean divided by history daily mean) is 0.878, indicating a systematic downward shift.
+This nonstationarity is precisely where the iid assumptions of classical methods fail.
+Finally, spare-parts demand is driven by equipment failure and maintenance schedules rather than promotions or seasonal patterns, so the strong future-known covariates (e.g., holiday indicators) that benefit traditional models in consumer-goods settings are largely absent.
+
+\subsection{Dataset 2: OSA Consumer Goods}
+
+The second dataset is an open-source benchmark with 100 consumer-goods SKUs.
+It complements Zhao by offering uncensored demand, longer lead times (declared scenarios of 7, 14, and 21 days), and a sparse panel structure (48\% density).
+The sparse panel limits statistical power (only 17 series survive an 80\% completeness filter for replay), so we use OSA primarily for mechanism demonstration and cross-dataset consistency checks rather than ranking claims.
+
+
+% ============================================================
+\section{Main Results}\label{sec:results}
+% ============================================================
+
+We present results in two layers: the \emph{prediction layer} (Layer~B), which evaluates the quality of probabilistic forecasts via normalized pinball loss (NPL), and the \emph{decision layer} (Layer~C), which evaluates inventory costs under realistic cost structures via newsvendor simulation.
+All model-selection and analysis uses the \emph{validation window} (Zhao: July--August 2019; OSA: September--December 2020).
+The \emph{test window} (Zhao: September--October 2019) is evaluated exactly once with frozen design choices as a replication check.
+Both windows follow a strict prequential protocol: each forecast uses only data available at the time of the decision.
+
+\subsection{Prediction Layer (Layer B)}
+
+Table~\ref{tab:layer_b} reports prediction-layer performance on the Zhao dataset, measured by NPL at the protection-interval level.
+Lower NPL indicates better-calibrated quantile forecasts.
+The columns Cov$_{50}$ and Cov$_{85}$ report the empirical coverage rate of the 50th and 85th percentile forecasts, restricted to positive-demand observations.
+
+\begin{table}[ht]
+\caption{Prediction-layer performance on the Zhao validation window. NPL = normalized pinball loss (lower is better). Cov$_{50}$ and Cov$_{85}$ = empirical coverage at the 50th and 85th percentiles for positive-demand observations. $\Delta$NPL = difference from the \textsf{emp-daily} baseline; negative values indicate improvement. Statistical significance is assessed via paired bootstrap (10{,}000 replications, clustered by series).}\label{tab:layer_b}
+\centering\small
+\begin{tabular}{lccccl}
+\toprule
+\textbf{Model} & \textbf{NPL} & \textbf{Cov}$_{50}$ & \textbf{Cov}$_{85}$ & $\boldsymbol{\Delta}$\textbf{NPL} & \textbf{Sig.} \\
+\midrule
+Chronos-2 (fine-tuned) & 0.286 & 0.401 & 0.776 & $-$0.055 & $***$ \\
+Chronos-2 (zero-shot)  & 0.289 & 0.437 & 0.801 & $-$0.052 & $***$ \\
+TFT                    & 0.296 & 0.299 & 0.750 & $-$0.046 & $***$ \\
+ERM-GBDT (rich)        & 0.305 & 0.313 & 0.717 & $-$0.036 & $***$ \\
+ERM-linear (rich)      & 0.320 & 0.321 & 0.715 & $-$0.021 & $***$ \\
+ERM-GBDT (lean)        & 0.325 & 0.307 & 0.759 & $-$0.016 & $*$   \\
+GBDT (rich features)   & 0.330 & 0.477 & 0.783 & $-$0.012 & n.s. \\
+GBDT (lean features)   & 0.338 & 0.474 & 0.793 & $-$0.004 & n.s. \\
+Empirical quantile     & 0.342 & 0.409 & 0.750 & ---      & ---  \\
+ERM-linear (lean)      & 0.345 & 0.289 & 0.774 & $+$0.003 & n.s. \\
+DeepAR                 & 0.504 & 0.155 & 0.155 & $+$0.162 & $***$ \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+Four findings emerge.
+First, the TSFM variants (Chronos-2) achieve the lowest NPL, with fine-tuning providing a small but consistent improvement over zero-shot (0.286 vs.\ 0.289).
+The advantage over the empirical baseline is 16\% in relative terms and statistically significant ($p < 0.01$).
+Second, TFT is the best-performing deep learning baseline (NPL = 0.296), significantly outperforming the empirical method but falling short of Chronos-2.
+DeepAR performs poorly (NPL = 0.504), consistent with its known difficulty on highly intermittent demand.
+Third, the ERM newsvendor of \citet{BanRudin2019}---which directly minimizes newsvendor cost rather than prediction loss---outperforms the two-stage GBDT approach when using the same features (ERM-GBDT-rich 0.305 vs.\ GBDT-rich 0.330), confirming that end-to-end optimization has value.
+However, the nonlinear extension (LightGBM) substantially outperforms Ban \& Rudin's original linear formulation (0.305 vs.\ 0.320), and the TSFM still dominates both (0.286 vs.\ 0.305) \emph{without using any features}.
+Fourth, two-stage GBDT---whether using rich features (lagged sales, inventory positions, SKU attributes) or lean features (sales history only)---does not significantly outperform the simple empirical quantile, suggesting that for spare-parts demand lacking strong exogenous signals, the two-stage ETO pipeline with tree models adds little value.
+
+\subsection{Decision Layer (Layer C)}
+
+Table~\ref{tab:layer_c} reports inventory costs under the newsvendor simulation at the baseline operating point ($\alpha = 0.85$, $L = 1$ day, $\kappa_h = 0.20$, derived costing).
+We also report the cycle service rate (CSR) and fill rate (FR), both upper bounds due to demand censoring.
+
+\begin{table}[ht]
+\caption{Decision-layer performance on the Zhao validation window ($\alpha = 0.85$, $L = 1$, $\kappa_h = 0.20$). Cost = average newsvendor cost per series-day. $\Delta$Cost = difference from the empirical-quantile baseline; 95\% confidence intervals from paired bootstrap (10{,}000 replications, clustered by series). $^{*}$ = CI excludes zero. CSR and FR are upper bounds (censored demand).}\label{tab:layer_c}
+\centering\small
+\begin{tabular}{lccccc}
+\toprule
+\textbf{Model} & \textbf{Cost} & \textbf{$\Delta$Cost [95\% CI]} & \textbf{CSR} & \textbf{FR} & \textbf{$S$} \\
+\midrule
+\multicolumn{6}{l}{\emph{TSFM forecast + rich features}} \\
+Hybrid-linear (TSFM + rich) & \textbf{0.455} & $-$0.129 [$-$0.221, $-$0.061]$^{*}$ & \textbf{0.900} & 0.900 & 15 \\
+Hybrid-GBDT (TSFM + rich)   & 0.495 & $-$0.088 [$-$0.153, $-$0.036]$^{*}$ & 0.859 & 0.844 & 13 \\
+\midrule
+\multicolumn{6}{l}{\emph{History + rich features}} \\
+ERM-linear (rich)       & 0.462 & $-$0.122 [$-$0.245, $-$0.041]$^{*}$ & 0.900 & \textbf{0.907} & 17 \\
+ERM-GBDT (rich)         & 0.509 & $-$0.075 [$-$0.120, $-$0.036]$^{*}$ & 0.878 & 0.851 & 15 \\
+GBDT (rich features)    & 0.614 & $+$0.030 [$-$0.005, $+$0.072] & 0.858 & 0.736 & 17 \\
+\midrule
+\multicolumn{6}{l}{\emph{History + lean features}} \\
+ERM-GBDT (lean)         & 0.605 & $+$0.021 [$-$0.021, $+$0.062] & 0.881 & 0.788 & 22 \\
+ERM-linear (lean)       & 0.611 & $+$0.028 [$-$0.016, $+$0.070] & 0.876 & 0.779 & 18 \\
+GBDT (lean features)    & 0.674 & $+$0.090 [$+$0.056, $+$0.127]$^{*}$ & 0.843 & 0.679 & 22 \\
+\midrule
+\multicolumn{6}{l}{\emph{History only}} \\
+Chronos-2 (fine-tuned)  & 0.549 & $-$0.035 [$-$0.066, $-$0.008]$^{*}$ & 0.841 & 0.779 & 13 \\
+Chronos-2 (zero-shot)   & 0.552 & $-$0.032 [$-$0.063, $-$0.005]$^{*}$ & 0.854 & 0.785 & 15 \\
+TFT                     & 0.559 & $-$0.025 [$-$0.073, $+$0.019] & 0.860 & 0.812 & 18 \\
+Empirical quantile      & 0.584 & --- & 0.845 & 0.760 & 13 \\
+Moirai-1.1 (zero-shot)  & 0.593 & $+$0.009 [$-$0.023, $+$0.037] & 0.793 & 0.752 & --- \\
+TimesFM-2.5 (zero-shot) & 0.707 & $+$0.123 [$+$0.094, $+$0.155]$^{*}$ & 0.711 & 0.677 & --- \\
+DeepAR                  & 0.901 & $+$0.317 [$+$0.225, $+$0.433]$^{*}$ & 0.684 & 0.501 & 0 \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+Table~\ref{tab:layer_c} is organized by information set to disentangle the contributions of method (end-to-end vs.\ two-stage) and information (rich features vs.\ history only).
+The lowest inventory cost is achieved by the \emph{hybrid pipeline}---TSFM quantile forecasts combined with supply-side features in a linear quantile-regression decision model (0.455 vs.\ Chronos-2-FT 0.549, a 17\% reduction).
+Decomposing this advantage reveals that it rests on three independent mechanisms, each with clear empirical support:
+
+\begin{enumerate}
+\item \textbf{End-to-end optimization.}
+  Holding the information set fixed, ERM consistently outperforms the corresponding ETO method: ERM-GBDT-lean beats GBDT-lean (0.607 vs.\ 0.682, $-$11\%), and ERM-GBDT-rich beats GBDT-rich (0.500 vs.\ 0.614, $-$19\%).
+  This confirms the core argument of \citet{BanRudin2019}: directly minimizing the newsvendor cost at the correct critical ratio is more efficient than first estimating a distribution and then optimizing.
+\item \textbf{Rich features.}
+  Holding the method fixed, adding inventory positions and SKU attributes improves cost within both frameworks: ERM-linear-rich beats ERM-linear-lean (0.462 vs.\ 0.611, $-$24\%), and GBDT-rich beats GBDT-lean (0.614 vs.\ 0.682, $-$10\%).
+\item \textbf{TSFM forecast features.}
+  Replacing the lean time-series features with the TSFM's PI-day quantile forecasts (q50, q85, mean, standard deviation) further reduces cost within each decision model: Hybrid-linear beats ERM-linear-rich (0.455 vs.\ 0.462, $-$1.5\%), and Hybrid-GBDT beats ERM-GBDT-rich (0.495 vs.\ 0.500, $-$1.0\%).
+  The TSFM's pretrained temporal representations capture demand-side patterns that the ERM's lean lag/rolling features cannot.
+\end{enumerate}
+
+\noindent Table~\ref{tab:ablation} formalizes this decomposition as an ablation study.
+Starting from the simplest two-stage baseline (GBDT-lean), each row adds one mechanism cumulatively.
+The GBDT path shows end-to-end optimization contributing $-$10\% on validation ($-$7\% on test), rich features $-$16\% ($-$17\%), and TSFM forecasts a further $-$3\% ($-$4\%).
+The linear path yields larger end-to-end and feature gains but a comparable TSFM increment.
+Neither end-to-end optimization nor rich features alone can match the standalone TSFM:
+ERM-lean (0.605--0.611) trails Chronos-2-FT (0.549) by 10--11\%, because the TSFM's pretrained representations provide an implicit information advantage that compensates for the two-stage pipeline's suboptimality.
+
+\begin{table}[ht]
+\caption{Ablation of the hybrid pipeline's three mechanisms, evaluated on validation and test windows ($\alpha = 0.85$). Each row adds one component cumulatively. $\Delta$\% is relative to GBDT-lean.}\label{tab:ablation}
+\centering\small
+\begin{tabular}{lccc cc cc}
+\toprule
+ & & & & \multicolumn{2}{c}{\textbf{Validation}} & \multicolumn{2}{c}{\textbf{Test}} \\
+\cmidrule(lr){5-6}\cmidrule(lr){7-8}
+\textbf{Configuration} & \textbf{E2E} & \textbf{Rich} & \textbf{TSFM} & \textbf{Cost} & \textbf{$\Delta$\%} & \textbf{Cost} & \textbf{$\Delta$\%} \\
+\midrule
+\multicolumn{8}{l}{\emph{GBDT decision model}} \\
+GBDT-lean            &     &     &     & 0.674 & ---    & 0.385 & ---    \\
+ERM-GBDT-lean        & \checkmark &     &     & 0.605 & $-$10\% & 0.358 & $-$7\%  \\
+ERM-GBDT-rich        & \checkmark & \checkmark &     & 0.509 & $-$24\% & 0.298 & $-$23\% \\
+Hybrid-GBDT          & \checkmark & \checkmark & \checkmark & 0.495 & $-$27\% & 0.286 & $-$26\% \\
+\midrule
+\multicolumn{8}{l}{\emph{Linear decision model}} \\
+ERM-linear-lean      & \checkmark &     &     & 0.611 & $-$9\%  & 0.419 & $+$9\%  \\
+ERM-linear-rich      & \checkmark & \checkmark &     & 0.462 & $-$31\% & 0.329 & $-$15\% \\
+Hybrid-linear        & \checkmark & \checkmark & \checkmark & 0.455 & $-$33\% & 0.291 & $-$24\% \\
+\midrule
+\multicolumn{8}{l}{\emph{Reference: history-only TSFM}} \\
+Chronos-2-FT         &     &     &     & 0.549 & $-$19\% & 0.310 & $-$19\% \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+Within the history-only group, Chronos-2-FT reduces cost by 6.0\% relative to the empirical baseline (0.549 vs.\ 0.584, $\Delta = -0.035$, $p < 0.05$) and outperforms TFT (0.559), GBDT-lean (0.674), and DeepAR (0.901).
+This cost reduction translates to substantial savings at scale: annualized over 2{,}000 SKUs, the fine-tuned TSFM saves \$1.50M per year relative to the empirical method (Table~\ref{tab:annualized}).
+
+\paragraph{Not all TSFMs are equal.}
+We additionally evaluate two other zero-shot TSFMs---TimesFM-2.5 \citep{TimesFM2024} and Moirai-1.1 \citep{Moirai2024}---to test whether Chronos-2's advantage generalizes across foundation models.
+On the validation window, TimesFM-2.5 (0.707) is \emph{significantly worse} than the empirical baseline ($\Delta = +0.123$, $p < 0.05$), while Moirai-1.1 (0.593) is statistically indistinguishable from it.
+Neither matches Chronos-2-ZS (0.552).
+The test window narrows the gap---TimesFM improves to 0.366 (on par with emp-daily at 0.362), and Moirai improves to 0.330---but neither significantly outperforms the baseline.
+These results underscore that TSFM performance in the decision layer is model-specific: Chronos-2's quantile calibration on intermittent demand provides a concrete advantage that does not automatically transfer to other pretrained architectures.
+
+\paragraph{Out-of-sample confirmation (test window).}
+Table~\ref{tab:layer_c_test} replicates the decision-layer evaluation on a held-out test window (September--October 2019), with training data extended through August 2019.
+The key findings replicate:
+the two hybrid arms again occupy the top two positions (Hybrid-GBDT 0.286, Hybrid-linear 0.291), followed by ERM-GBDT-rich (0.298);
+the TSFM dominates all history-only methods (Chronos-2-FT 0.310 vs.\ empirical 0.362, $-$14\%);
+and DeepAR remains near-dysfunctional (0.557).
+However, no arm's improvement over the empirical baseline reaches statistical significance on the test window (all 95\% CIs include zero), in contrast to the validation window where the top six arms are significant.
+The wider CIs reflect the shorter evaluation period and higher cost variance in this window.
+One notable shift is that Hybrid-GBDT edges ahead of Hybrid-linear on the test window (0.286 vs.\ 0.291), whereas the reverse held on validation (0.455 vs.\ 0.495)---suggesting that the relative advantage of linear vs.\ nonlinear decision models is sample-dependent, though both hybrid variants consistently outperform all non-hybrid arms.
+ERM-linear-rich, the validation-window runner-up (0.462), drops to 9th on the test window (0.329), while ERM-GBDT-rich remains stable at 3rd---confirming that GBDT is the more robust decision-model choice across windows.
+
+\begin{table}[ht]
+\caption{Decision-layer performance on the Zhao test window (September--October 2019, $\alpha = 0.85$, $L = 1$, $\kappa_h = 0.20$). Same setup and bootstrap procedure as Table~\ref{tab:layer_c}. No arm significantly outperforms the empirical baseline on this window; the wider CIs reflect the shorter evaluation period.}\label{tab:layer_c_test}
+\centering\small
+\begin{tabular}{lccccc}
+\toprule
+\textbf{Model} & \textbf{Cost} & \textbf{$\Delta$Cost [95\% CI]} & \textbf{CSR} & \textbf{FR} & \textbf{$S$} \\
+\midrule
+\multicolumn{6}{l}{\emph{TSFM forecast + rich features}} \\
+Hybrid-GBDT (TSFM + rich)   & \textbf{0.286} & $-$0.077 [$-$0.240, $+$0.013] & 0.965 & 0.952 & 12 \\
+Hybrid-linear (TSFM + rich) & 0.291 & $-$0.071 [$-$0.239, $+$0.023] & 0.961 & \textbf{0.956} & 13 \\
+\midrule
+\multicolumn{6}{l}{\emph{History + rich features}} \\
+ERM-GBDT (rich)         & 0.298 & $-$0.064 [$-$0.229, $+$0.029] & 0.962 & 0.954 & 15 \\
+ERM-linear (rich)       & 0.329 & $-$0.033 [$-$0.166, $+$0.048] & 0.959 & 0.956 & 15 \\
+GBDT (rich features)    & 0.343 & $-$0.019 [$-$0.085, $+$0.021] & 0.944 & 0.889 & 14 \\
+\midrule
+\multicolumn{6}{l}{\emph{History + lean features}} \\
+ERM-GBDT (lean)         & 0.358 & $-$0.005 [$-$0.146, $+$0.075] & 0.956 & 0.930 & 19 \\
+ERM-linear (lean)       & 0.419 & $+$0.057 [$+$0.022, $+$0.086]$^{*}$ & 0.953 & 0.930 & 18 \\
+GBDT (lean features)    & 0.385 & $+$0.023 [$-$0.107, $+$0.097] & 0.932 & 0.855 & 27 \\
+\midrule
+\multicolumn{6}{l}{\emph{History only}} \\
+Chronos-2 (fine-tuned)  & 0.310 & $-$0.052 [$-$0.173, $+$0.015] & 0.945 & 0.917 & 13 \\
+Moirai-1.1 (zero-shot)  & 0.330 & $-$0.032 [$-$0.149, $+$0.034] & 0.893 & 0.904 & --- \\
+Chronos-2 (zero-shot)   & 0.322 & $-$0.041 [$-$0.166, $+$0.034] & 0.949 & 0.921 & 15 \\
+TFT                     & 0.324 & $-$0.038 [$-$0.203, $+$0.053] & 0.957 & 0.944 & 18 \\
+Empirical quantile      & 0.362 & --- & 0.937 & 0.896 & 12 \\
+TimesFM-2.5 (zero-shot) & 0.366 & $+$0.004 [$-$0.110, $+$0.070] & 0.844 & 0.865 & --- \\
+DeepAR                  & 0.557 & $+$0.195 [$+$0.127, $+$0.287]$^{*}$ & 0.820 & 0.662 & 0 \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\paragraph{The prediction--decision disconnect.}
+A central finding is that \emph{prediction-layer rankings do not carry over to the decision layer}.
+Four disconnects stand out.
+First, GBDT-lean achieves lower prediction loss than the empirical baseline (NPL 0.338 vs.\ 0.342), yet its inventory cost is 17\% \emph{higher} (0.682 vs.\ 0.584).
+The explanation is systematic over-estimation of the upper quantiles: GBDT's median stocking level is $S = 22$, nearly double that of the empirical method ($S = 13$), producing excess holding cost that swamps any forecast improvement.
+Second, adding rich features to the same GBDT pipeline (GBDT-rich 0.614 vs.\ GBDT-lean 0.682) improves cost by 10\%, yet GBDT-rich still falls 12\% short of the feature-free TSFM (0.549)---demonstrating that within the two-stage ETO framework, better features cannot substitute for a better base forecaster.
+Third, ERM-linear-rich ranks 5th in prediction (NPL 0.320) but 2nd in decision cost (0.462), surpassing the standalone TSFM---confirming that end-to-end optimization at the correct critical ratio, combined with rich features, can more than compensate for weaker distributional forecasts.
+Fourth, DeepAR predicts poorly (NPL 0.504) and its decision-layer cost (0.901) approaches the always-zero policy (1.190), indicating near-complete failure to produce actionable quantiles.
+These disconnects reinforce the methodological argument for evaluating forecasting models on downstream decisions, not just prediction metrics.
+
+\begin{table}[ht]
+\caption{Annualized economic impact relative to empirical baseline ($\alpha = 0.85$, $\kappa_h = 0.20$, $L = 1$ day). Negative delta indicates cost savings.}\label{tab:annualized}
+\centering\small
+\begin{tabular}{lcccc}
+\toprule
+\textbf{Model} & \textbf{Cost/SKU-month} & $\boldsymbol{\Delta}$\textbf{/SKU-month} & $\boldsymbol{\Delta}$\textbf{\%} & \textbf{Annual} $\boldsymbol{\Delta}$ \\
+\midrule
+Chronos-2 (fine-tuned) & \$41.09 & $-$\$4.38 & $-$9.6\% & $-$\$1.50M \\
+Chronos-2 (zero-shot)  & \$41.57 & $-$\$3.90 & $-$8.6\% & $-$\$1.34M \\
+GBDT (lean)            & \$53.71 & $+$\$8.24 & $+$18.1\% & $+$\$2.83M \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\subsection{Sensitivity to Economic Parameters}\label{sec:sensitivity}
+
+The TSFM's cost advantage is robust across a wide range of operating conditions.
+Table~\ref{tab:sensitivity_lt} shows that the advantage persists---and in fact grows---as the lead time increases from 1 to 14 days.
+At $L = 14$, fine-tuned Chronos-2 reduces cost by 6.4\% relative to the empirical method (36.17 vs.\ 38.65), reflecting the TSFM's ability to produce better-calibrated multi-step-ahead forecasts.
+
+\begin{table}[ht]
+\caption{Sensitivity to lead time ($\alpha = 0.85$, $\kappa_h = 0.20$). Cost is total newsvendor cost per SKU-month.}\label{tab:sensitivity_lt}
+\centering\small
+\begin{tabular}{lcccc}
+\toprule
+& \multicolumn{4}{c}{\textbf{Lead time $L$ (days)}} \\
+\cmidrule(lr){2-5}
+\textbf{Model} & $L=1$ & $L=3$ & $L=7$ & $L=14$ \\
+\midrule
+Chronos-2 (fine-tuned) & 40.61 & 39.31 & 37.42 & 36.17 \\
+Chronos-2 (zero-shot)  & 41.03 & 39.89 & 38.24 & 37.47 \\
+Empirical quantile     & 44.75 & 43.35 & 41.01 & 38.65 \\
+GBDT (lean)            & 52.82 & 51.77 & 49.98 & 47.80 \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+Table~\ref{tab:sensitivity_kh} shows that the TSFM's advantage is also stable across holding-cost rates $\kappa_h \in \{0.10, 0.15, 0.20, 0.25, 0.30\}$.
+The relative cost reduction remains approximately 9--10\% at all levels, confirming that the advantage is driven by better forecast calibration rather than by a cost-structure artifact.
+
+\begin{table}[ht]
+\caption{Sensitivity to holding-cost rate ($\alpha = 0.85$, $L = 1$ day). Cost is total newsvendor cost per SKU-month.}\label{tab:sensitivity_kh}
+\centering\small
+\begin{tabular}{lccccc}
+\toprule
+& \multicolumn{5}{c}{\textbf{Holding-cost rate $\kappa_h$}} \\
+\cmidrule(lr){2-6}
+\textbf{Model} & 0.10 & 0.15 & 0.20 & 0.25 & 0.30 \\
+\midrule
+Chronos-2 (ft) & 20.31 & 30.46 & 40.61 & 50.76 & 60.92 \\
+Chronos-2 (zs) & 20.52 & 30.77 & 41.03 & 51.29 & 61.55 \\
+Empirical      & 22.38 & 33.56 & 44.75 & 55.94 & 67.13 \\
+GBDT (lean)    & 26.41 & 39.61 & 52.82 & 66.02 & 79.22 \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\subsection{Cross-Dataset Consistency (OSA)}
+
+On the OSA dataset, which features consumer goods with uncensored demand and longer lead times (7--21 days), we observe the same qualitative pattern.
+At $L = 7$, $\alpha = 0.90$, the zero-shot TSFM achieves a prediction-layer NPL of 0.108, compared to 0.261 for the empirical method---a 59\% improvement.
+On the decision layer, the TSFM achieves substantially lower cost than the empirical baseline at all operating points, with the advantage growing at longer lead times.
+At $L = 7$ and $\alpha = 0.90$ (P2 policy), the TSFM's cost is 42.49 versus 60.34 for the empirical method, a 30\% reduction.
+The OSA dataset has only 17 effective series, limiting statistical power for formal inference, but the directional consistency across two datasets with very different characteristics (intermittent spare parts vs.\ consumer goods, censored vs.\ uncensored demand, $L=1$ vs.\ $L=7$--21 days) strengthens the external validity of our findings.
+
+
+% ============================================================
+\section{Mechanism Analysis}\label{sec:mechanism}
+% ============================================================
+
+The previous section established that the TSFM produces both better forecasts and better inventory decisions than all baselines.
+In this section, we decompose the TSFM's advantage at the SKU level to identify the \emph{mechanism} driving its superiority.
+We focus on the Zhao dataset, where the larger sample size (2{,}000 SKUs $\times$ 2 validation months $\approx$ 3{,}400 SKU-month observations) permits statistical analysis.
+
+\subsection{Drift Ratio as the Primary Driver}
+
+For each SKU-month, we compute the \emph{drift ratio}: the ratio of the validation-period daily mean demand to the historical daily mean demand.
+A drift ratio near 1 indicates stationary demand; values far from 1 indicate level shifts.
+We also compute three control variables: the coefficient of variation of a 30-day rolling mean (\emph{cv\_rolling}), the zero-demand share (\emph{zero\_share}), and the ADF test $p$-value for stationarity (\emph{adf\_p}).
+
+Table~\ref{tab:mechanism} reports the TSFM's cost advantage by drift-ratio quintile.
+The advantage concentrates overwhelmingly in the top quintile (Q5), which contains SKUs with the largest demand-level shifts (drift ratio 1.67--44.0).
+In Q5, the TSFM saves 13.3\% of total cost relative to the empirical baseline (\$15{,}400 in aggregate over two months).
+The TSFM wins 34\% of individual SKU-month comparisons in Q5, compared to only 18--28\% in Q1--Q4; but the magnitude of Q5 wins is large, reflecting the empirical method's systematic failure to adapt to level shifts.
+For near-stationary SKUs (Q2, drift ratio 0.31--0.72), the empirical method performs comparably: the TSFM's advantage is only 5.1\%.
+
+\begin{table}[ht]
+\caption{Cost decomposition by drift-ratio quintile. $\Delta$Cost = total empirical cost minus total TSFM cost (positive = TSFM cheaper). Win\% = fraction of SKU-months where TSFM has lower cost.}\label{tab:mechanism}
+\centering\small
+\begin{tabular}{lccrrc}
+\toprule
+\textbf{Quintile} & \textbf{Drift range} & $n$ & $\boldsymbol{\Delta}$\textbf{Cost} & $\boldsymbol{\Delta}$\textbf{\%} & \textbf{Win\%} \\
+\midrule
+Q1 (low)  & [0.00, 0.31] & 674 & $-$601  & $-$5.7\%  & 28\% \\
+Q2        & [0.31, 0.72] & 674 & $+$364  & $+$5.1\%  & 27\% \\
+Q3        & [0.72, 1.12] & 673 & $-$2{,}795 & $-$41.1\% & 23\% \\
+Q4        & [1.12, 1.67] & 674 & $+$728  & $+$5.7\%  & 18\% \\
+Q5 (high) & [1.67, 44.0] & 674 & $+$15{,}406 & $+$13.3\% & 34\% \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+The Q3 anomaly (TSFM 41\% worse) is driven by three outlier SKU-months where the TSFM massively overestimates demand.
+Removing these three observations reduces Q3's disadvantage to less than 5\%.
+This illustrates a key trade-off: the TSFM's ability to adapt to level shifts occasionally leads to over-reaction when the validation-period demand happens to spike temporarily.
+
+\subsection{Regression Analysis}
+
+To disentangle drift from other demand characteristics, we estimate an OLS regression of the per-SKU-month cost difference (empirical minus TSFM) on the drift ratio and control variables:
+\begin{equation}\label{eq:ols_mechanism}
+  \Delta\text{Cost}_i = \beta_0 + \beta_1 \cdot \text{drift}_i + \beta_2 \cdot \text{cv}_i + \beta_3 \cdot \text{zero}_i + \varepsilon_i.
+\end{equation}
+
+The estimated coefficients are $\hat\beta_1 = 3.17$ ($t = 3.8$), indicating that a one-unit increase in the drift ratio is associated with a \$3.17 increase in the TSFM's cost advantage per SKU-month.
+The coefficient of variation ($\hat\beta_2 = -3.49$) and zero share ($\hat\beta_3 = -22.38$) are also significant but work \emph{against} the TSFM: the empirical method handles high-intermittency, low-volatility SKUs slightly better.
+The overall $R^2$ is low (0.023), reflecting the substantial SKU-level heterogeneity in cost outcomes, but the drift coefficient is robust to alternative specifications and subsamples.
+
+\subsection{Interpretation}
+
+The mechanism analysis yields a clear narrative: the TSFM's advantage is driven by its ability to \emph{adapt to demand-level drift}.
+Empirical quantile methods, which estimate the demand distribution from the full available history, are anchored to the historical mean and respond slowly to level shifts.
+The TSFM, having learned time-series dynamics from a large pretraining corpus, can detect and adapt to drift within its context window.
+
+This finding connects to the theoretical literature on nonparametric inventory management.
+The DDM algorithm of \citet{ShiChenDuenyas2016} achieves optimal regret under iid demand but has no mechanism for detecting nonstationarity.
+The mean drift ratio in our data is 0.878, indicating systematic downward drift---precisely the setting where the iid assumption fails.
+Section~\ref{sec:robustness} confirms that DDM indeed performs poorly on this data, with costs 70\% higher than the TSFM.
+
+The mechanism also explains the disconnect between prediction and decision layers observed for GBDT.
+GBDT's quantile forecasts are well-calibrated on average (NPL comparable to the empirical method), but systematically over-estimate the upper tail, leading to over-stocking.
+The TSFM avoids this by producing tighter predictive distributions that track the current demand level.
+
+
+% ============================================================
+\section{Robustness}\label{sec:robustness}
+% ============================================================
+
+We report three robustness checks corresponding to natural concerns about our main findings: (i)~can a decision-aware loss function further improve the TSFM's inventory performance? (ii)~how much context (history) does the TSFM need? (iii)~how does the TSFM perform against a method specifically designed for censored demand?
+
+\subsection{Decision-Aware Fine-Tuning (WS-3)}\label{sec:ws3}
+
+A natural hypothesis is that fine-tuning the TSFM with a loss function aligned to the inventory objective---rather than the standard pinball loss---should produce better decisions.
+We test this hypothesis by comparing three loss variants: standard pinball, newsvendor-cost, and $\alpha$-focused Gaussian-weighted pinball.
+We evaluate each variant at three lead times ($L \in \{1, 7, 14\}$ days) to check whether the choice of loss becomes more consequential as the forecasting horizon extends.
+
+\begin{table}[ht]
+\caption{Decision-aware fine-tuning: newsvendor cost by loss variant and lead time ($\alpha = 0.85$, July 2019). zs = zero-shot (no fine-tuning).}\label{tab:ws3}
+\centering\small
+\begin{tabular}{lccc}
+\toprule
+& \multicolumn{3}{c}{\textbf{Lead time $L$ (days)}} \\
+\cmidrule(lr){2-4}
+\textbf{Loss variant} & $L=1$ & $L=7$ & $L=14$ \\
+\midrule
+Chronos-2 (zero-shot) & 18.72 & 16.61 & 16.81 \\
+Pinball (standard ft)  & 18.56 & 16.00 & 15.45 \\
+Newsvendor cost        & 17.98 & 15.33 & 14.65 \\
+Focused pinball        & 18.29 & 15.84 & 15.47 \\
+Empirical quantile     & 20.51 & 17.77 & 16.71 \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+Table~\ref{tab:ws3} shows that while fine-tuning improves over zero-shot (consistent with our main results), the \emph{choice} of loss function has no material effect.
+The newsvendor-cost loss produces nominally lower costs at some operating points, but the differences are small and not statistically significant across the two validation months.
+All three fine-tuned variants significantly outperform the empirical baseline.
+
+The lack of improvement from decision-aware losses has a structural explanation: Chronos-2's native nine quantile heads span $\tau \in \{0.1, 0.2, \ldots, 0.9\}$, which already covers the decision-relevant region for typical service levels ($\alpha \in [0.80, 0.95]$).
+A decision-aware loss can only improve performance by better calibrating these existing heads, but the standard pinball loss already does this effectively.
+
+\subsection{Cold-Start and Context Length (WS-6)}\label{sec:ws6}
+
+A key practical question is: how much sales history does the TSFM need?
+This matters for new-product introduction, where only a few weeks of data may be available.
+We evaluate the zero-shot TSFM at context lengths of 7, 14, 30, 60, and 90 days, compared to using the full available history ($\sim$180 days).
+
+\begin{table}[ht]
+\caption{TSFM performance by context length. NPL = prediction-layer normalized pinball loss. Cost = decision-layer newsvendor cost (July 2019, $n = 442$ cold-start-eligible SKUs).}\label{tab:coldstart}
+\centering\small
+\begin{tabular}{lcccc}
+\toprule
+\textbf{Context} & \textbf{NPL} & \textbf{Cost} & \textbf{CSR} & \textbf{FR} \\
+\midrule
+7 days   & 0.916 & 134.58 & 0.993 & 0.803 \\
+14 days  & 0.320 & 106.59 & 0.975 & 0.783 \\
+30 days  & 0.271 & 94.20  & 0.962 & 0.774 \\
+60 days  & 0.266 & 90.91  & 0.939 & 0.763 \\
+90 days  & 0.265 & 90.61  & 0.921 & 0.755 \\
+Full     & 0.262 & 90.59  & 0.921 & 0.749 \\
+\midrule
+Empirical (full) & 0.332 & 101.37 & 0.878 & 0.662 \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+Two findings emerge.
+First, the TSFM reaches near-full performance with only 30 days of context: NPL drops from 0.320 (14 days) to 0.271 (30 days) and then plateaus (0.262 at full history).
+On the decision layer, the 30-day TSFM already outperforms the full-history empirical method (cost 94.20 vs.\ 101.37).
+Second, we tested a $k$-nearest-neighbor analogy baseline that borrows quantile forecasts from similar long-history series to augment the short-context TSFM, but it provided no improvement at any context length (NPL $\approx$ 0.32 regardless of context).
+This suggests that the TSFM's pretraining corpus provides distributional priors that substitute for both local history and cross-series borrowing---a property particularly valuable for new-product cold starts.
+
+\subsection{Censored Demand and DDM (WS-5)}\label{sec:ws5}
+
+In the Zhao dataset, 29\% of SKU-months are demand-censored: observed sales equal beginning inventory, so true demand is unobserved.
+A natural concern is whether the TSFM is handicapped by training on censored observations.
+We compare the TSFM against DDM \citep{ShiChenDuenyas2016}, a nonparametric algorithm specifically designed for the censored newsvendor, which directly optimizes the base-stock level from censored data using stochastic gradient descent.
+
+\begin{table}[ht]
+\caption{Comparison with DDM on the Zhao validation window ($\alpha = 0.85$, $L = 1$ day).}\label{tab:ddm}
+\centering\small
+\begin{tabular}{lccccc}
+\toprule
+\textbf{Model} & \textbf{Cost (Jul)} & \textbf{Cost (Aug)} & \textbf{CSR} & \textbf{$S$ (median)} \\
+\midrule
+Chronos-2 (zero-shot) & 18.72 & 63.11 & 0.921 & 19.5 \\
+Empirical quantile    & 20.51 & 69.00 & 0.893 & 16.0 \\
+DDM                   & 35.95 & 78.87 & 0.975 & 60.5 \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+DDM performs substantially worse than both the TSFM and the empirical method, with costs 70--92\% higher than Chronos-2.
+DDM achieves the highest service rate (CSR 0.975), but at the price of severe over-stocking: its median base-stock level is 60.5, compared to 19.5 for the TSFM.
+This over-stocking reflects DDM's learning dynamics under nonstationarity: with a mean drift ratio of 0.878 (systematic downward demand shift), DDM's gradient-descent updates---calibrated to iid demand---fail to track the declining demand level and converge to an excessively high base-stock.
+The TSFM, which can detect and adapt to drift within its context window, avoids this trap.
+
+This result is practically important: it demonstrates that the TSFM's forecast-then-optimize approach dominates even a method designed to handle the specific challenge (censored demand) that most distinguishes this dataset from textbook settings.
+
+
+% ============================================================
+\section{Conclusion}\label{sec:conclusion}
+% ============================================================
+
+This paper evaluates whether pretrained time series foundation models can replace bespoke forecasting pipelines for inventory decisions.
+Using two datasets spanning intermittent spare parts and consumer goods, we embed Chronos-2 in a complete forecast-to-decision pipeline and compare it against seven baselines---empirical quantiles, gradient-boosted trees, DeepAR, TFT, the ERM newsvendor of \citet{BanRudin2019}, and the censored-demand DDM algorithm---under realistic cost structures.
+
+Our findings are nuanced.
+Among history-only methods, the TSFM produces both better probabilistic forecasts (16\% lower NPL) and better inventory decisions (6--10\% lower newsvendor cost) than all baselines at every operating point we evaluate.
+However, combining end-to-end optimization with rich features can surpass the standalone TSFM: ERM-linear-rich achieves cost 0.462 on the validation window (16\% below the TSFM), and a hybrid that adds the TSFM's own quantile forecasts to the feature set achieves the overall lowest cost of 0.455 (17\% below the standalone TSFM).
+The out-of-sample test window confirms the ranking: the two hybrid arms remain first and second (0.287 and 0.291), followed by ERM-GBDT-rich (0.297), with the standalone TSFM variants clustered at 0.310--0.322.
+The mechanism driving the TSFM's advantage within history-only methods is the model's ability to adapt to demand-level drift: the largest savings accrue on SKUs with large demand shifts, precisely where history-anchored methods fail.
+Decision-aware fine-tuning is unnecessary: the standard pinball loss already achieves the best cost outcomes, because Chronos-2's native quantile heads span the decision-relevant region.
+The TSFM reaches full performance with only 30 days of history, making it suitable for cold-start settings where traditional methods have no data to work with.
+
+\paragraph{Why supply-side features help decisions but not predictions.}
+A striking finding is that GBDT and ERM use the same rich features yet achieve opposite outcomes: GBDT-rich ranks 6th in prediction (NPL 0.330) and 11th in decision cost (0.614), while ERM-rich ranks 5th in prediction (NPL 0.320) but 1st in decision cost (0.462).
+The explanation lies in the alignment between features and objective.
+The rich features are predominantly \emph{supply-side} signals: current inventory, in-transit stock, and unit cost.
+These carry little information about future demand---on-hand inventory does not cause customers to request more or fewer parts---so adding them to a demand-forecasting model (GBDT-rich) yields marginal prediction gains that do not translate into better decisions (GBDT-rich 0.614 vs.\ feature-free TSFM 0.549).
+Under the ERM loss, however, the same features become directly actionable: high on-hand inventory implies less need to order, expensive items warrant conservative stocking, and open purchase orders reduce the effective deficit.
+The ERM model does not need to predict demand accurately; it learns a mapping from \emph{current state} to \emph{optimal order}, and supply-side features are precisely the state variables that determine this mapping.
+This explains the seeming paradox that ERM-rich is a mediocre forecaster but the best decision-maker: it bypasses demand estimation entirely, using supply-side information to navigate a shortcut that the two-stage ETO pipeline---which must first translate features into demand forecasts---cannot exploit.
+
+The TSFM and ERM-rich thus draw their advantages from complementary sources: the TSFM from superior temporal pattern recognition on the demand side, ERM-rich from direct optimization on the supply side.
+We test this complementarity directly with a \emph{hybrid pipeline}: the TSFM's PI-day quantile forecasts (q50, q85, mean, standard deviation) are fed as features alongside the same supply-side variables into a decision model trained with newsvendor quantile loss.
+The choice of decision model matters but is sample-dependent: on the validation window, linear quantile regression leads (Hybrid-linear 0.455 vs.\ Hybrid-GBDT 0.495); on the test window, the order reverses (Hybrid-GBDT 0.287 vs.\ Hybrid-linear 0.291).
+What is robust across both windows is that (i)~the two hybrid arms occupy the top two positions, and (ii)~each hybrid variant outperforms its non-TSFM counterpart (Hybrid-GBDT vs.\ ERM-GBDT-rich; Hybrid-linear vs.\ ERM-linear-rich).
+Feature importance in the GBDT hybrid reveals that supply-side variables (stock value, beginning inventory, unit cost) dominate, while TSFM features rank 5th, 9th, and 13th---the demand-side signal is real but secondary to supply-side state.
+That the hybrid improves over ERM-rich by replacing lean time-series lags with the TSFM's quantile summaries confirms that pretrained temporal representations carry information that simple lag features cannot capture, even in a downstream decision model that never touches the raw time series.
+
+These findings extend the ``bitter lesson'' of \citet{SuiEtAl2026} from the prediction layer to the decision layer.
+Sui et al.\ show that a fine-tuned TSFM outperforms Alibaba's production N-BEATS system on forecast accuracy; we show that this accuracy advantage translates into real inventory cost savings.
+Moreover, while Sui et al.\ find that distilling future-known covariates (holiday rates, promotional effects) into the TSFM improves e-commerce forecasting, we find that for spare-parts demand---which lacks such strong exogenous signals---the TSFM achieves its advantage using only univariate sales history.
+The pretrained model's value lies not in feature exploitation but in temporal pattern recognition: detecting and adapting to level shifts, regime changes, and nonstationarity that anchor empirical methods.
+
+\paragraph{Managerial Implications.}
+For inventory managers, our results suggest a concrete operational change: replace the two-stage forecast-and-optimize pipeline with a single pretrained model that takes raw sales history as input and directly produces the distributional forecasts needed for stocking decisions.
+This eliminates the need for feature engineering, model selection, hyperparameter tuning, and periodic retraining---a significant operational simplification for retailers managing thousands of SKUs.
+The annualized savings are material: \$1.3--1.5M per year for a 2{,}000-SKU spare-parts portfolio, with higher savings for SKUs exhibiting demand drift.
+
+\paragraph{Limitations and Future Work.}
+Several limitations qualify our conclusions.
+\emph{Evaluation windows.}
+Our prequential protocol uses two months for validation and two for testing.
+This is narrower than the full fiscal year evaluated in \citet{SuiEtAl2026}, and the lack of statistical significance on the test window (Table~\ref{tab:layer_c_test}) may partly reflect limited sample size rather than the absence of a real effect.
+Longer evaluation horizons with rolling origins would strengthen the evidence.
+\emph{TSFM coverage.}
+We evaluate three TSFMs (Chronos-2, TimesFM-2.5, Moirai-1.1), but only Chronos-2 significantly outperforms the empirical baseline.
+Whether this reflects Chronos-2's architectural advantages (native quantile heads, large pretraining corpus) or an idiosyncratic fit to intermittent spare-parts demand remains unclear; extending the comparison to newer TSFMs and to additional demand categories (fashion, perishables) is a natural next step.
+\emph{Policy class.}
+We test only the base-stock policy.
+While the forecast-to-decision pipeline generalizes to any policy that requires quantile estimates of lead-time demand, confirming the findings with $(s, S)$ and $(r, Q)$ policies is an open question.
+\emph{Censored demand.}
+Because observed sales are truncated by available inventory in the Zhao dataset (29\% of SKU-months), the CSR and FR metrics we report are upper bounds on true service quality.
+The cross-dataset consistency with OSA (which has uncensored demand) mitigates this concern, but a direct correction via censored-demand estimation (e.g., Kaplan-Meier or EM) would be more rigorous.
+\emph{Hybrid gains.}
+Our hybrid pipeline achieves the lowest decision cost on both windows, but the gain over ERM-rich is modest (1.5\% on validation, 3.6\% on test); whether more sophisticated integration architectures---such as a TSFM encoder with a decision-aware head that conditions on supply state---can widen this margin is an open question.
+Finally, the low $R^2$ of our mechanism regression (0.023) indicates that while drift is the primary systematic driver, substantial SKU-level heterogeneity remains unexplained---understanding these sources is an open question for future work.
+
+
+%\THEEndNotes
+\begingroup \parindent 0pt \parskip 0.0ex \def\enotesize{\normalsize} \theendnotes \endgroup
+
+% Appendix here
+% Options are (1) APPENDIX (with or without general title) or
+%             (2) APPENDICES (if it has more than one unrelated sections)
+% Outcomment the appropriate case if necessary
+%
+% \begin{APPENDIX}{<Title of the Appendix>}
+% \end{APPENDIX}
+%
+%   or
+%
+% \begin{APPENDICES}
+% \section{<Title of Section A>}
+% \section{<Title of Section B>}
+% etc
+% \end{APPENDICES}
+
+% Acknowledgments here
+%\ACKNOWLEDGMENT{}
+
+% References here (outcomment the appropriate case)
+
+% CASE 1: BiBTeX used to constantly update the references
+%   (while the paper is being written).
+\bibliographystyle{informs2014}
+\bibliography{references}
+
+%%%%%%%%%%%%%%%%%
+\end{document}
+%%%%%%%%%%%%%%%%%

@@ -1,0 +1,5 @@
+split,arm,cost,CSR,FR,delta_cost,ci_lo,ci_hi,significant,n_series,B
+validation,timesfm-zs,0.7065,0.7114,0.6766,0.122694,0.09412,0.154764,True,1637,10000
+validation,moirai-zs,0.5926,0.7926,0.7522,0.008849,-0.023088,0.037492,False,1637,10000
+test,timesfm-zs,0.3661,0.8442,0.8651,0.003984,-0.110147,0.070401,False,1764,10000
+test,moirai-zs,0.3303,0.8934,0.9038,-0.031789,-0.149391,0.034065,False,1764,10000

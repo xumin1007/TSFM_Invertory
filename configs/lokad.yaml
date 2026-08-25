@@ -1,0 +1,172 @@
+dataset: lokad
+dataset_version: distribution_network_workshop
+spec: docs/implementation_specs/04_lokad.md
+
+provenance:
+  measured_on: 2026-08-22
+  table_ranges:
+    Orders:         {rows: 106303, date_min: 2019-02-25, date_max: 2022-12-31}
+    PurchaseOrders: {rows:  25020, date_min: 2019-02-23, date_max: 2022-12-31}
+    WeeklyForecast: {rows:  70263, date_min: 2019-02-18, date_max: 2023-02-27}
+    StockHistory:   {rows:  17316, date_min: 2022-01-03, date_max: 2022-12-26}
+  orders_columns: [OrderId, Date, Sku, Ref, Loc, DeliveryQty, NetAmount, Client, SalesChannel]
+  binding_constraint: >
+    StockHistory 仅覆盖 2022-01-03..2022-12-26（52 个周一，333 条序列 × 52 = 17,316 行，密度 1.00）。任何需要库存状态的
+    实验被硬性限制在 2022 单年内。销售/PO/预测覆盖 2019-02 起，可用于特征历史。
+
+source_paths:
+  catalog:         data/external/lokad/Catalog.tsv
+  sku:             data/external/lokad/SKU.tsv
+  stock_history:   data/external/lokad/StockHistory.tsv
+  orders:          data/external/lokad/Orders.tsv.gz
+  purchase_orders: data/external/lokad/PurchaseOrders.tsv
+  weekly_forecast: data/external/lokad/WeeklyForecast.tsv
+
+primary_key:
+  series_id_expr: "Sku"          # 形如 '10014552 / Berlin'，即 (Ref, Loc) 的拼接
+  time_column: Date
+
+target:
+  column: DeliveryQty
+  source_table: orders
+  name: observed_sales_weekly
+  aggregation: sum_over_target_window
+  censoring: true
+
+calendar:
+  origin_frequency: weekly
+  origin_anchor: monday
+  horizon_days: 7
+  target_window: "[origin, origin + 6]"
+
+splits:
+  # 全部 origin 限制在 StockHistory 覆盖的 2022 年内，以保证状态字段可用。
+  train:      {origins: [2022-01-03, 2022-07-25]}   # 30 个周一
+  validation: {origins: [2022-08-01, 2022-09-26]}   # 9 个周一
+  test:       {origins: [2022-10-03, 2022-12-19]}   # 12 个周一
+  # 最后一个 test origin 目标窗末日 2022-12-25 <= Orders 末日 2022-12-31
+
+history:
+  feature_history_start: 2019-02-18      # 销售/PO/预测可回溯至此
+  state_history_start:   2022-01-03      # 库存状态最早可用日
+  history_window_days: 365
+  note: >
+    feature_history_start 与 state_history_start 不同是本数据集的关键特性：
+    销量滞后特征可用 2019 年起的历史，但库存状态特征只在 2022 年内有定义。
+    构造面板时须逐特征记录其 max_source_date，禁止把 2022 前的库存值当作已知。
+
+metric:
+  integer_units: true   # §4.3 路径 A(整数计数) / B(连续量)
+  y_min: 1.0
+  y_min_bind_rate: null           # 整数件量纲；审计时回填
+  y_min_rule: "整数件最小业务单位"
+  w_scheme: tercile
+  w_field: BuyPrice
+  w_source_table: catalog
+  w_aggregation: "静态，按 Ref"
+  w_values: {low: 1.0, mid: 1.5, high: 2.5}
+  w_edges_frozen_on: train
+  w_missing_default: 1.0
+  category_column: Category
+
+data_semantics:
+  # 与 Zhao 统一的「origin 时点可观察」纪律（主 MD §2.4.1）
+  open_purchase_qty_expr: "sum(OrderQty) over PO with Date < origin AND delivered_by(origin) == False"
+  delivered_by_origin_expr: "DeliveryDate < origin AND DeliveryDate != 2001-01-01"
+  is_closed_is_final_state: true
+  is_closed_forbidden_reason: >
+    实测 IsClosed 是数据抽取时刻的最终状态，不是 origin 时点状态：
+    IsClosed=False 的 DeliveryDate 跨 2001-01-01(哨兵) 到 2023-01-08。
+    用 IsClosed 判定「origin 时点未关闭」等于引入未来信息，禁止。
+    改用可观察谓词 delivered_by(origin)，与 Zhao 的 arrival_date >= t 同构。
+  delivery_qty_is_final: true
+  delivery_qty_forbidden_reason: >
+    DeliveryQty 亦为最终累计值。对 origin 时点尚未交付的 PO，
+    在订量取 OrderQty 全额，**不得**取 OrderQty - DeliveryQty
+    （后者用最终交付量抵扣了尚未发生的交付）。
+  partial_delivery_present: true
+  partial_delivery_facts:
+    n_open_with_partial_delivery: 1470     # IsClosed=False 且 DeliveryQty>0
+    n_closed_short: 986                    # IsClosed=True 且 DeliveryQty<OrderQty
+    n_delivery_date_sentinel: 918          # DeliveryDate=2001-01-01，均为 IsClosed=False
+  partial_delivery_note: >
+    存在部分到货与短量关单，但每张 PO 只有一个 DeliveryDate，没有分次交付事件流。
+    因此无法在 origin 时点重建"已部分交付多少"。首轮按整单处理（未交付即全额在订），
+    该近似须在报告中声明；若日后取得交付事件流，须重建本项。
+  # DeliveryDate 的语义已实测判定（2026-08-22），不再是"承诺/交付"的含糊表述
+  delivery_date_semantics: actual_delivery
+  delivery_date_evidence:
+    - "918 条哨兵 2001-01-01，其中 IsClosed=False 占 100% —— 承诺日期不会对未完成订单缺失"
+    - "非哨兵 24,102 条中 DeliveryQty>0 占 99.9% —— 日期与实际交付量共现"
+    - "同一 (Supplier,Type) 内 lag 不恒定：唯一取值数中位 13、标准差中位 3.7 天，ORDER 型跨 10–70 天；承诺日期应为 Date+固定提前期，nunique≈1"
+  delivery_date_rule: >
+    与 Zhao 的 arrival_date 同等对待：事后实际到货，只可回溯使用
+    （构造 origin 前的已实现收货与历史 lag），未来到货日期本身绝不入特征。
+
+  # 承诺 ETA：Lokad 无任何提前期字段，须自行估计 —— 与 Zhao/OSA 的不对称
+  promised_eta_source: estimated_from_history
+  promised_eta_estimator:
+    group_by: [Supplier, Type]
+    statistic: median_lag_days
+    window: expanding
+    constraint: "仅用 DeliveryDate < origin 的已完成 PO"
+    min_group_n: 30
+    fallback: "组内不足 30 条时退到 Type 级，再退到全局"
+  promised_eta_expr: "Date + lag_hat[(Supplier, Type)]"
+  promised_eta_note: >
+    必须至少按 Type 分组：实测 TRANSFER 的 lag 高度集中（p50=5、p85=7、组内标准差 1.8 天），
+    ORDER 则离散得多（p50 24–40 天、p85 37–62 天、标准差 5.5–18 天）。
+    混合两者会同时高估调拨、低估采购。截至 replay 起点 2022-10-03，
+    14 个 (Supplier,Type) 组的最小样本量为 244，全部满足 min_group_n。
+  eta_error_available: true
+  eta_error_expr: "实际 lag - lag_hat，仅用 origin 前已完成 PO 的滚动分位数"
+  asymmetry_warning: >
+    Lokad 的承诺 ETA 是**本项目估计量**，Zhao 的是数据给定量（normal_lead_time）。
+    二者的 ETA 特征不可并列声称同等可靠；Lokad 的 ETA 误差含估计器自身误差。
+
+  weekly_forecast_provenance: "Workshop #3 给定的外部预测输入，非本项目训练结果"
+
+capabilities:
+  annual_seasonality: true        # 销售历史 2019-2022 > 1 年
+  stockout_mask: false
+  inventory_qty: true             # 仅 2022
+  purchase_orders: true
+  eta: true
+  decision_layer: true
+  decision_layer_type: [static_workshop3, continuous_replay]   # 层 C，二者分开报告
+  replay: true
+
+replay:
+  window: {start: 2022-10-03, days: 84, end: 2022-12-25}   # 完全落在 test 内，且不超出库存覆盖 (2022-12-26)
+  end_convention: "闭区间，含首尾共 days 天：end = start + days - 1"
+  review_cadence_days: 28         # Workshop #3 的四周调拨节奏
+  daily_order: [receive_arrivals, fulfil_demand_path, place_order_or_transfer]
+  shortage_mechanism: lost_sales  # Workshop #3 设定：无欠单
+  n_paths: 1
+
+workshop3_static_view:
+  # 来源相容的静态视图，其固定约束逐项声明，禁止改写为连续回放
+  last_transfer_days_ago: 7
+  transfer_cadence_weeks: 4
+  coverage_period: "lead_time + 2 * transfer_cadence"
+  excess_identification_quantile: 0.95
+  backorder: false
+
+cost:
+  status: source_workshop_scenario   # 来源教程设定，仅作外部情景，不与 Zhao 混用
+  holding_annual_rate: 0.20
+  transfer_unit_cost: from_workshop
+  shortage_penalty: null
+
+gates:
+  - id: LOKAD_TIME_OVERLAP
+    status: RESOLVED
+    measured: "StockHistory 2022-01-03..2022-12-26；已据此把全部 origin 限定在 2022"
+  - id: LOKAD_ORDERS_SCHEMA
+    status: RESOLVED
+    measured: "列名已实测冻结，见 provenance.orders_columns"
+
+notes:
+  - "52 周库存历史只够切出 1 条 84 天回放路径，与 OSA 同为单路径，功效受限。"
+  - "Lokad 是合成教程数据；其成本与服务结论只作机制/敏感性证据，不代表 Zhao 的业务事实。"
+  - "WeeklyForecast 是给定输入，进入统一 q50/q85 比较前须经前置窗残差校准，禁用测试期销量。"

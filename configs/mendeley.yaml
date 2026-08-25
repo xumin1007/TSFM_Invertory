@@ -1,0 +1,158 @@
+dataset: mendeley
+dataset_version: retail_transactions_and_stocks
+spec: docs/implementation_specs/05_mendeley.md
+
+provenance:
+  measured_on: 2026-08-22
+  sales:     {rows: 125751, date_min: 2025-06-01, date_max: 2026-04-24, uniq_days: 326}
+  inventory: {rows: 284755, start_min: 2025-06-01, start_max: 2026-04-24, end_max: 2026-04-23}
+  scale: {stores: 40, products: 2326, series: 50447}
+  sparsity: "125751 销售行 / 50447 序列 ≈ 2.5 **交易行**每序列"
+  sparsity_correction: >
+    **更正（2026-08-22）**：早期把"2.5 行/序列"读作"上下文长度 2"，据此判定
+    TSFM 不可用 —— 该推理错误。销售表是**交易日志**（125,751 行中仅 2 行
+    Qty Sold==0），故"无记录日 = 当日无交易 = 零销量"可辩护，序列长度应为
+    生命期内的日历天数，而非交易行数。真正的限制是间歇性而非长度，见
+    intermittency 与 tsfm_suitability。
+
+  # 序列生命期 = 首末交易之间的日历天数（不是交易行数）
+  series_lifetime_days: {p10: 1, p25: 1, p50: 15, p75: 90, p90: 184, max: 328}
+  lifetime_ge_100d: {n_series: 11616, share: 0.230}
+  lifetime_ge_180d: {n_series: 5317,  share: 0.105}
+
+intermittency:
+  # 在 lifetime>=100d 子总体上实测
+  adi_days: {p25: 31.0, p50: 46.3, p75: 65.0, max: 161.5}
+  syntetos_boylan_threshold: 1.32
+  classification: EXTREME_INTERMITTENT   # ADI 中位 46.3，超阈值 35 倍
+  implication: >
+    100 天的序列里平均仅约 2 个非零需求事件：**长度可得，信息量近乎为零**。
+    本数据集因此适合回答"TSFM 在极端间歇下是否优于 Croston/TSB"，
+    而不适合回答项目的主预测命题。
+
+statistical_power:
+  # 实测于 lifetime>=100d 子总体，周级完整周面板
+  measured_on: 2026-08-22
+  dense_panel: {daily_rows: 2090844, daily_zero_share: 0.9744,
+                weekly_rows: 288186, weekly_zero_share: 0.9062}
+  validation: {n_rows: 30583, n_series: 7033, mde: 0.00148, base_npl: 0.06941, relative_mde: 0.0213}
+  test:       {n_rows: 14924, n_series: 4315, mde: 0.00336, base_npl: 0.14452, relative_mde: 0.0232}
+  power_verdict: ADEQUATE      # 相对 MDE 2.1–2.3%，与 fresh_lt(1.3–2.0%) 同量级
+  # —— 但功效足够不代表接口可用，见下 ——
+  quantile_interface_verdict: DEGENERATE
+  degeneracy_evidence: >
+    周级零占比 0.9062 > 0.85，故真实 q50 与 q85 **均恒为 0**，恒预测 0 是
+    贝叶斯最优解。实测 always-zero 退化对照在验证窗 NPL 最低（0.0694），
+    显著优于 roll-mean-4(0.0759)、naive-last(0.0781)、croston-sba(0.1186)；
+    而其 cov_50_pos = 0.0000，从不覆盖任何正需求。
+    详见 00_global_conventions.md §5.1「零占比超过 tau 时接口退化」。
+  degeneracy_implication: >
+    在 (q50, q85) 接口下，Mendeley **无法支撑任何模型比较**，包括原本设想的
+    "TSFM vs Croston/TSB"。这不是样本量问题（功效充足），是目标分位数不含信息。
+  possible_remedies:
+    - "改用 tau > 0.906 的分位数（q95/q99）—— 须登记为新场景，不与主接口混报"
+    - "改变预测目标：分别建模'发生时的需求量'与'距下次需求的时间'"
+  croston_caveat: >
+    上述 croston-sba 数值是**未经残差校准**的原始点预测直接充当 q50=q85 的结果，
+    刻意如此以隔离指标本身的判别力。它**不是**对 Croston 的公平评价：
+    按 §6.1 路由，Croston 应经残差校准器产出分位数。
+
+tsfm_suitability:
+  verdict: NOT_USABLE_QUANTILE_INTERFACE_DEGENERATE
+  usable_subpopulation: "series_lifetime >= 100 天，11,616 条（23.0%）"
+  zero_fill_rule: >
+    补零**只在生命期内**进行。首次交易前（未上架）与末次交易后（已下架）
+    不得补零 —— 那是凭空造数据。
+  selection_caveat: >
+    "生命期>=100天"是一次筛选，population 由 50,447 降至 11,616（23%）。
+    结论不得外推到其余 77% 的短生命期序列。
+  decision_layer_unchanged: >
+    本更正**不改变**决策层判定：库存语义门仍 BLOCKED，且无 PO/ETA，
+    Mendeley 依旧无法参与端到端链条。
+  inventory_interval_days: {min: 0, p25: 2, median: 7, p75: 33, max: 316, null_end: 22701}
+  return_share: 0.0596
+
+source_paths:
+  sales:     "data/external/Retail Transactions and Stocks Data/retail_sales_ml_apl.csv"
+  inventory: "data/external/Retail Transactions and Stocks Data/retail_inventory_ml_apl.csv"
+
+primary_key:
+  series_id_expr: "Store + '_' + `Product No`"
+  time_column: "Transaction Date"
+
+target:
+  column: "Qty Sold"
+  name: observed_net_sales
+  aggregation: sum_over_target_window
+  return_rule: net           # 保留负净销量，同时另存毛销量、退货量、交易数
+  censoring: unverified
+  censoring_note: "无缺货标记（见 data_semantics），缺货时段不可识别；pinball 一律标为观测净销量损失。"
+
+calendar:
+  origin_frequency: weekly
+  origin_anchor: monday
+  horizon_days: 7
+  target_window: "[origin, origin + 6]"
+
+splits:
+  train:      {origins: [2025-06-02, 2026-01-26]}   # 35 个周一
+  validation: {origins: [2026-02-02, 2026-03-02]}   # 5 个周一
+  test:       {origins: [2026-03-09, 2026-04-13]}   # 6 个周一
+  # 最后一个 test origin 目标窗末日 2026-04-19 <= 数据末日 2026-04-24
+
+history:
+  feature_history_start: 2025-06-01
+  state_history_start: null        # 取决于库存语义门，未通过前无状态特征
+  history_window_days: 180
+  lag_days: [7, 28]
+
+metric:
+  integer_units: true   # §4.3 路径 A(整数计数) / B(连续量)
+  y_min: 1.0
+  y_min_bind_rate: null            # 整数件量纲；审计时回填
+  y_min_rule: "整数件最小业务单位"
+  wape_denominator: "sum|y|"       # 允许负净销量，故取绝对值，与来源式不可比（00_global_conventions.md §5.3）
+  w_scheme: tercile
+  w_field: "Stock Unit Cost Price"
+  w_source_table: inventory
+  w_aggregation: "训练窗内该 (Store, Product No) 的中位数"
+  w_values: {low: 1.0, mid: 1.5, high: 2.5}
+  w_edges_frozen_on: train
+  w_missing_default: 1.0
+  category_column: "Product Category"
+
+data_semantics:
+  stock_status_is_not_availability: true
+  stock_status_values: [Full Price, Markdown Tier 1, Markdown Tier 2, Clearance, Promo]
+  stock_status_note: >
+    实测 `Stock Status` 是定价/生命周期状态，**不是**库存可得性标记。本数据集
+    因此没有任何缺货指示字段，只有 `Qty on hand` 数量。spec 05 将其列为必读字段
+    但未说明语义，据此更正：不得把 Stock Status 当作 availability 使用。
+    该列可作为促销/清仓类别特征。
+
+capabilities:
+  annual_seasonality: false        # 326 天 < 1 年 → 年度季节朴素禁用，退化为同频上一期/滚动历史
+  stockout_mask: false
+  inventory_qty: gated             # 取决于 MENDELEY_INVENTORY_SEMANTICS 门
+  purchase_orders: false
+  eta: false
+  decision_layer: false
+  replay: false
+
+gates:
+  - id: MENDELEY_INVENTORY_SEMANTICS
+    status: BLOCKED
+    criterion: >
+      须证实 (Start Date, End Date) 区间的可用时点语义。量化判据：同一
+      (Store, Product No) 的区间重叠率、缺口率、同日冲突率均须报告，且必须在
+      数据发布说明中找到区间语义的明确陈述。中位区间 7 天但最长 316 天、
+      22701 行 End Date 为空 —— 未证实前禁止把 End Date 或覆盖至未来的区间
+      作为任一 origin 的特征。
+    on_fail: >
+      输出 sales_only_panel.parquet，库存实验标为 BLOCKED（退出码 2），
+      禁止以区间末日回填。销量预测实验不受影响，照常运行。
+
+notes:
+  - "序列极稀疏（均 2.5 条销售行），Croston-SBA / TSB 是主力基线；GBDT 与 TSFM 在此的稳定性是核心观察点。"
+  - "冷启动切片将覆盖绝大多数序列，须报告 is_cold_start 的实际占比，避免把常态说成压力切片。"
+  - "定位为外部预测/库存可见性验证，不做 ETA 或补货政策因果结论。"

@@ -1,0 +1,183 @@
+dataset: osa
+dataset_version: raw
+spec: docs/implementation_specs/03_osa.md
+
+provenance:
+  measured_on: 2026-08-22
+  daily: {rows: 40590, date_min: 2019-01-01, date_max: 2021-05-03, calendar_days: 854, series: 100}
+  date_encoding: "int YYYYMMDD，须显式解析"
+  per_series_density: {obs_min: 291, obs_median: 409, obs_max: 449, median_span_days: 850}
+  leadtime_join: {candidate_key: "(store_id, sku) = (store_id, item_id)", pair_coverage: 1.00, vendor_rows: 100, dup_on_key: 0}
+  note: >
+    提前期连接门已实测通过：两侧各 100 个 (store,item) 对，完全匹配，vendor 表在
+    该键上无重复。spec 03 步骤 2 的门可标为 PASS，但仍需人工确认业务编码语义。
+
+source_paths:
+  daily:    data/external/osa-data/osa_raw_data.csv
+  leadtime: data/external/osa-data/vendor_leadtime_info.csv
+
+primary_key:
+  series_id_expr: "store_id + '_' + sku"
+  time_column: date
+
+target:
+  column: total_sales_units
+  name: observed_sales
+  aggregation: sum_over_target_window
+  censoring: unverified
+  censoring_note: >
+    销售列是否等于未截断真实需求未经生成机制确认；确认前一律记为 observed_sales，
+    不得表述为真实需求（spec 03 §0）。
+
+calendar:
+  origin_frequency: weekly
+  origin_anchor: monday
+  horizon_days: 7
+  target_window: "[origin, origin + 6]"
+  secondary_task:
+    id: next_day
+    horizon_days: 1
+    status: registered_secondary   # 非主结果；累计目标须由日分布聚合，禁止用单日 q85 当覆盖期 q85
+
+splits:
+  train:      {origins: [2019-01-07, 2020-08-31]}
+  validation: {origins: [2020-09-07, 2020-12-28]}
+  test:       {origins: [2021-01-04, 2021-04-26]}
+  # 最后一个 test origin 目标窗末日 2021-05-02 <= 数据末日 2021-05-03
+
+history:
+  feature_history_start: 2019-01-01
+  state_history_start: 2019-01-01
+  history_window_days: 365
+  lag_days: [1, 7, 28]
+
+metric:
+  integer_units: true   # §4.3 路径 A(整数计数) / B(连续量)
+  y_min: 1.0
+  y_min_bind_rate: null           # 整数件量纲；审计时回填
+  y_min_rule: "整数件最小业务单位"
+  w_scheme: flat                  # 无成本字段 → w_i ≡ 1.0
+  w_value: 1.0
+  category_column: product_category
+  registered_sensitivity:
+    id: w_by_leadtime
+    scheme: tercile
+    field: LEAD_TIME_ON_ORDER
+    values: {low: 1.0, mid: 1.5, high: 2.5}
+    status: off                   # 敏感性报告用，不进入主结果
+
+data_semantics:
+  # 与 Zhao / Lokad 统一的「origin 时点可观察」纪律（主 MD §2.4.1）
+  open_purchase_qty_field: units_on_order
+  keep_separate: [units_in_transit, units_in_dc, inventory_pipeline]
+  keep_separate_reason: >
+    三者是同一补货管道的不同阶段，语义不同，禁止相加为单一"在途量"；
+    inventory_pipeline 可能已含前两者，合并会重复计数。须先审计三者关系。
+  realized_receipts_field: replenishment_units
+  realized_receipts_rule: "仅累计 date < origin 的 replenishment_units"
+  # ---- 提前期表已实测判定为「装饰性」，不得当作数据事实 ----
+  leadtime_table_status: DECORATIVE_NOT_VALIDATED
+  leadtime_table_evidence:
+    - "表中 L=ON_ORDER+IN_TRANSIT+IN_DC 中位 14 天；但 units_on_order 与 replenishment_units 的最大互相关滞后中位仅 4 天"
+    - "表中 L 与经验最优滞后一致的序列占比 = 0.000（100 条序列无一命中）"
+    - "在 L_table 处的互相关系数中位 = 0.020，即基本无关"
+    - "LEAD_TIME_IN_DC ≡ LEAD_TIME_IN_TRANSIT + 1 在全部 100 行成立 —— 合成签名，非真实供应链"
+  leadtime_table_rule: >
+    该表不描述本数据集的实际补货时序，禁止用它构造承诺 ETA 特征、
+    也禁止用它推导保护期并声称有数据依据。
+    它只能作为**显式声明的情景参数**进入层 C 回放（见 replay.eta_scenario）。
+  promised_eta_available: false
+  eta_error_available: false
+  eta_note: >
+    OSA 既无到货日期（只有 replenishment_units 数量），提前期表又与流水无关，
+    因此承诺侧与误差侧**双双不可用**。07_decision_layer.md 的 P4 策略在本数据集
+    退化为 P3，须记 p4_unavailable=True。
+  state_snapshot_is_primary: true
+  state_snapshot_note: >
+    日表的 units_on_order 是直接快照，为 open_purchase_qty 主特征。
+    OSA 无订单明细，不存在"重建量"，故无快照-重建对账项。
+
+capabilities:
+  annual_seasonality: true        # 854 天 > 1 年
+  stockout_mask: false            # 无显式缺货标记，只有库存数量
+  inventory_qty: true
+  purchase_orders: partial        # 只有在订/在途/DC 的数量快照，无订单明细、无到货日期
+  eta: false                      # 提前期表装饰性，见 data_semantics.leadtime_table_status
+  decision_layer: true
+  decision_layer_type: continuous_replay   # 层 C
+  replay: true
+
+replay:
+  window: {start: 2021-01-04, days: 84, end: 2021-03-28}   # 完全落在 test 内
+  end_convention: "闭区间，含首尾共 days 天：end = start + days - 1"
+  review_cadence_days: 7
+  daily_order: [receive_arrivals, fulfil_demand_path, place_order]
+  shortage_mechanism: lost_sales
+  n_paths: 1
+  # 提前期不是数据事实（见 data_semantics.leadtime_table_status），
+  # 而是本项目为机制实验显式声明的情景参数。所有策略共享同一情景。
+  eta_scenario:
+    status: DECLARED_ASSUMPTION_NOT_DATA
+    lead_time_days: 14            # 取自提前期表的中位数，仅作情景锚点
+    grid: [7, 14, 21]             # 敏感性：短/中/长
+    dispersion: none              # 首轮确定性到货；随机延迟情景另行登记
+    reporting_rule: >
+      OSA 的服务—成本结论必须与"提前期为声明情景而非数据"一并呈现，
+      禁止表述为"在真实提前期下"的结果。
+  note: >
+    test 窗 123 天，仅容纳 1 条 84 天不重叠路径。结论的统计功效据此受限，
+    须与"单路径"字样一并报告。
+
+cost:
+  # 数据未提供成本参数，以下为预先声明的透明敏感性网格，非事实
+  status: declared_sensitivity_grid
+  holding_annual_rate_grid: [0.10, 0.20, 0.30]
+  shortage_penalty_grid: null     # 待 docs/07_decision_layer.md 固定
+  order_fixed_cost_grid: null
+
+gates:
+  - id: OSA_LEADTIME_JOIN
+    status: PASS_PENDING_HUMAN_CONFIRM
+    measured: "pair_coverage=1.00, dup_on_key=0"
+    effect: "键覆盖已实测通过；业务编码语义仍需人工确认后方可将提前期字段写入回放表。"
+  - id: OSA_DEMAND_TRUTH
+    status: BLOCKED
+    effect: "真值未确认前，回放只报 observed_sales 路径，禁止宣称真实短缺或真实服务率。"
+
+statistical_power:
+  # 实测：naive-last vs roll-mean-4，经残差校准器，按 series 聚类配对 bootstrap
+  measured_on: 2026-08-22
+  complete_week_share: 0.0945     # 要求周内 7 天齐全后，仅存 9.45% 的周
+  validation: {n_rows: 6,    n_series: 6,  mde: 0.14827, base_npl: 0.36127, relative_mde: 0.4104}
+  test:       {n_rows: 1080, n_series: 99, mde: 0.01204, base_npl: 0.17603, relative_mde: 0.0684}
+  verdict: CANNOT_SUPPORT_MODEL_COMPARISON
+  verdict_reason: >
+    验证窗仅剩 **6 行 / 6 序列**（相对 MDE 41%），而 MD §5.2 规定模型与策略选择
+    只能在验证窗做 —— 任何在此做出的选择都是噪声。即便看最好的测试窗
+    （1,080 行 / 99 序列），相对 MDE 6.84% 仍是 fresh_lt 的 3–5 倍
+    （fresh_lt: validation 1.31%、test 2.03%）。
+  role: MECHANISM_DEMONSTRATOR_ONLY
+  role_rule: >
+    OSA 在本项目中**只作机制演示与敏感性**：验证层 C 回放的守恒性、
+    展示不同分位数接口如何改变补货动作与服务—成本轨迹。
+    **禁止**在 OSA 上做模型排名或声称某模型更优。
+
+data_quality:
+  per_series_gap_rate: 0.52
+  zero_share_in_present_rows: 0.4845
+  gap_semantics_resolved: true
+  gap_semantics_evidence: >
+    有记录行中 48.45% 的 total_sales_units 恰为 0 —— 零值被显式记录。
+    故「无记录」不等价于「零需求」，缺失是真正的状态未知。
+    另：有记录日的星期分布均匀（14.17–14.41%），无营业日模式；
+    每日有记录的序列数中位仅 43/100，缺失为逐序列散缺而非日历层面。
+  gap_decision: EXCLUDE_NOT_ZERO_FILL   # 依 00_global_conventions.md §8.2
+  gap_handling: >
+    每序列中位仅 409 个观测、跨度 850 天，约 48% 的日历日缺记录。按
+    00_global_conventions.md §8.2，除非原始审计确证"无记录 = 该日需求为零"，
+    否则缺口保持缺失并排除对应 origin。该判定必须在 raw_audit.json 中给出结论，
+    不得默认补零 —— 补零与排除会给出实质不同的 NPL。
+
+notes:
+  - "仅 100 条序列；'新 SKU / 新门店泛化'切片的样本量须在报告中明示。"
+  - "日期为整型 YYYYMMDD，解析失败会静默产生错误排序，须在加载时断言。"

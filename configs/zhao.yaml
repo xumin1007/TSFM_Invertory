@@ -1,0 +1,131 @@
+dataset: zhao
+dataset_version: sku_month
+spec: docs/implementation_specs/02_zhao_sku_month.md
+
+provenance:
+  measured_on: 2026-08-22
+  coverage: {month_min: 2019-01, month_max: 2019-10, months: 10}
+  purchase_orders: {rows: 174155, eta_on_time: 0.588, eta_early: 0.108, eta_late: 0.303}
+  note: >
+    切分边界直接采用 ALIBABA_CASE_INSIGHTS_NEXT_STEPS.md §2.5 已固定的扩展窗口、
+    滚动起点协议，本文件只做机器可读化，未作任何改动。
+
+source_paths:
+  inventory_snapshot: data/external/Zhao/nav21957-sup-0001-supinfo01.xlsx
+  purchase_orders:    data/external/Zhao/nav21957-sup-0002-supinfo02.xlsx
+  sales_detail:       data/external/Zhao/nav21957-sup-0003-supinfo03.xlsx
+  sku_attributes:     data/external/Zhao/nav21957-sup-0004-supinfo04.xlsx
+  shelf_status:       data/external/Zhao/nav21957-sup-0005-supinfo05.xlsx
+  sales_sheets: [Jan, Feb, Mar, Apr, May, Jun, Jul, Aug, Sep, Oct]
+
+primary_key:
+  series_id_expr: "sku_ID"
+  time_column: month
+
+target:
+  column: quantity
+  name: observed_sales_next_month
+  aggregation: sum_over_calendar_month
+  censoring: true
+  zero_fill_rule: >
+    仅当该 (sku_ID, month) 存在于月初库存快照表时补 0；否则该 origin 排除，
+    写 exclusion_reason=TARGET_UNOBSERVED（00_global_conventions.md §8.2）。
+
+calendar:
+  origin_frequency: monthly
+  origin_anchor: month_start
+  horizon_months: 1
+  target_window: "[month t 的自然月]"
+
+splits:
+  train:      {origins: [2019-01, 2019-06]}   # 初始训练/上下文，形成首个完整 6 月历史
+  validation: {origins: [2019-07, 2019-08]}
+  test:       {origins: [2019-09, 2019-10]}
+  evaluation_mode: prequential
+  prequential_rule: >
+    10 月起点可使用已在业务上结束的 9 月实际历史重拟合，但禁止依据 9 月测试得分
+    改变模型、特征、校准规则、成本情景或策略。
+
+history:
+  feature_history_start: 2019-01
+  state_history_start: 2019-01
+  lag_months: [1, 3, 6]
+  lag_activation:
+    lag_1: 2019-02
+    lag_3: 2019-04
+    lag_6: 2019-07     # 6 月历史基线自 7 月起点起才参与验证与测试
+
+metric:
+  integer_units: true   # §4.3 路径 A(整数计数) / B(连续量)
+  y_min: 1.0
+  y_min_bind_rate: null           # 整数件量纲，规则直接定为 1.0；审计时回填实测 bind_rate
+  y_min_rule: "整数件最小业务单位"
+  w_scheme: tercile
+  w_field: unit_cost
+  w_source_table: purchase_orders
+  w_aggregation: "训练窗内 order_date < 2019-07 的订单 unit_cost 中位数，按 sku_ID"
+  w_values: {low: 1.0, mid: 1.5, high: 2.5}
+  w_edges_frozen_on: train
+  w_missing_default: 1.0
+  category_column: category       # 校准器 L1 分组键
+
+data_semantics:
+  open_purchase_qty_source: "月初 on-order_inventory 快照（首选）"
+  order_rebuild_use: "仅用于一致性审计与 ETA 分桶；不得替代快照"
+  arrival_date_semantics: "事后实际到货结果，禁止作为 t 后订单的特征"
+  promised_eta_expr: "order_date + normal_lead_time"
+  sales_column_aliases: {quantiity: quantity}    # July 表拼写变体
+
+capabilities:
+  annual_seasonality: false       # 10 个月 < 1 年 → 年度季节朴素禁用（主 MD §2.4.1）
+  stockout_mask: false
+  inventory_qty: true             # 月度快照，禁止插值为日库存
+  purchase_orders: true
+  eta: true                       # 承诺 ETA，非实际到货
+  decision_layer: true
+  decision_layer_type: single_period_proxy   # 层 B，每月重置为观测快照
+  replay: false                   # 不进入层 C
+
+cost:
+  holding_annual_rate_grid: [0.10, 0.20, 0.30]
+  holding_monthly_expr: "h_i = a * unit_cost_i / 12"
+  center_scenario: 0.20           # Lokad 兼容
+  shortage_penalty: null          # 无独立业务成本来源，禁止伪造
+  backorder: null
+
+gates: []
+
+statistical_power:
+  # 实测：按 series 聚类配对 bootstrap，B=1000，seed=42
+  measured_on: 2026-08-22
+  validation: {n_series: 25775, n_rows: 50196, delta_npl_ci_halfwidth: 0.0029}
+  test: {n_series: 26126, n_rows: 51556, delta_npl_ci_halfwidth: 0.0060}
+  minimum_detectable_effect_validation: 0.003    # 约合 NPL 相对差异 1.2%
+  # 切片级 MDE（实测，B=1000，切片内按 series 重抽样）
+  slice_mde:
+    overall:    {validation: 0.00275, test: 0.00504, n_rows_test: 51556}
+    cold_start: {validation: 0.03027, test: 0.03933, n_rows_test: 1027}
+  cold_start_structural_limit: >
+    冷启动切片 n_series == n_rows（1027 == 1027）：months_observed==0 只在序列
+    首次进入快照的那一个月成立，故每条序列恰好贡献一行。聚类 bootstrap 在此
+    无收益，测试窗仅 1,027 个独立观测，MDE=0.0393 而基数约 0.40 —— **±10% 相对分辨率**。
+    结论：**Zhao 无法支撑任何冷启动结论**。已实测的后果：消融 D 与主管线在该切片
+    相差 0.0825（约 2.1×MDE），既不能归因于特征改动，也不能判定为噪声。
+    冷启动证据须由 FreshRetailNet-LT（22,939 序列、105 个验证 origin）或
+    Mendeley（冷启动为常态，50,447 序列）承载。
+  implication: >
+    Zhao 验证窗**无法分辨小于约 1.2% 相对差异的 NPL 变化**。已实测的后果：
+    brand_ID 消融在验证窗 ΔNPL=+0.0005，CI=[-0.0025,+0.0034] 跨 0（不显著），
+    而在测试窗 ΔNPL=+0.0096，CI=[+0.0037,+0.0158] 显著。
+    按 MD §5.2 的冻结测试协议，选择只能在验证窗做，因此该消融**不能解决**
+    是否保留 brand_ID。
+  reporting_rule: >
+    本项目不得声称在 Zhao 上做了"证据支持的特征选择"。凡验证窗 CI 跨 0 的
+    特征取舍，一律记为"无证据，按现状/奥卡姆保留或删除"，并在论文中如实说明
+    功效限制，而不是引用测试窗显著性作为依据（那是 selection-on-test）。
+
+notes:
+  - "仅 2 个测试月；结论必须附按 SKU 聚类 bootstrap 的不确定性，且不得宣称稳健长期时间外泛化。"
+  - "stop_year 已按 origin 截断（3,653 行不可观察），原始列不得入特征；见 spec 02 §2。"
+  - "9 月、10 月须分别报告并另报合并值，禁止只报平均。"
+  - "库存结论限定为月度单期代理，禁止表述为连续库存因果效应。"

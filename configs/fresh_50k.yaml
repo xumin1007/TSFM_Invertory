@@ -1,0 +1,83 @@
+dataset: freshretailnet
+dataset_version: 50K
+spec: docs/implementation_specs/01_freshretailnet.md
+
+provenance:
+  measured_on: 2026-08-22
+  shards: {files: 5, rows: 4500000, dt_min: 2024-03-28, dt_max: 2024-06-25, days: 90, series: 50000}
+  official_eval_present: false
+  note: >
+    本地 5 个 shard 全部标记为 train，无官方 eval split。故本配置只支持
+    "训练数据审计 + 内部时间切分"，spec 01 步骤 2 的 50K 数据门据此关闭。
+
+source_paths:
+  shards: data/external/freshretailnet-50k/dataset/data-0000{0..4}-of-00005.arrow
+  info:   data/external/freshretailnet-50k/dataset/dataset_info.json
+
+primary_key:
+  series_id_expr: "store_id + '_' + product_id"
+  time_column: dt
+
+target:
+  column: sale_amount
+  name: observed_sales_daily
+  aggregation: sum_over_target_window
+  censoring: true
+
+calendar:
+  origin_frequency: weekly
+  origin_anchor: monday
+  horizon_days: 7
+  target_window: "[origin, origin + 6]"
+
+splits:
+  # 全域仅 90 天。最后一个 test origin 的目标窗末日 2024-06-23 <= 数据末日 2024-06-25。
+  train:      {origins: [2024-04-08, 2024-05-20]}   # 首个 origin 前留 11 天最小历史
+  validation: {origins: [2024-05-27, 2024-06-03]}   # 2 个周一
+  test:       {origins: [2024-06-10, 2024-06-17]}   # 2 个周一
+  test_is_official_eval: false
+
+history:
+  feature_history_start: 2024-03-28
+  state_history_start: 2024-03-28
+  history_window_days: 56         # 8 周；90 天全域不支持更长窗
+
+metric:
+  integer_units: false   # §4.3 路径 A(整数计数) / B(连续量)
+  y_min: 0.1
+  y_min_bind_rate: 0.0494         # 训练窗 (dt <= 2024-05-26) 实测
+  y_min_rule: "00_global_conventions.md §4.3 阶梯规则；y_min=1.0 在本数据集 bind_rate=0.6924，严重失效"
+  w_scheme: flat
+  w_value: 1.0
+  category_column: third_category_id
+
+data_semantics:
+  stock_status_polarity: "hours_stock_status == 1 表示缺货（已实测，见 00_global_conventions.md §5.4.4）"
+  is_stockout_expr: "hours_stock_status[hour]"
+  s_paper_expr: "1 - hours_stock_status[hour]"
+  operating_hours: [6, 22]
+  recovery_constraint: "d = y*s_paper + d_hat*(1-s_paper)"
+
+capabilities:
+  annual_seasonality: false       # 90 天 < 1 年 → 年度季节朴素基线禁用，退化为周内季节
+  stockout_mask: true
+  inventory_qty: false
+  purchase_orders: false
+  eta: false
+  decision_layer: false
+  replay: false
+
+future_known_covariates:
+  allowed: [holiday_flag, discount, activity_flag]
+  forbidden: [precpt, avg_temperature, avg_humidity, avg_wind_level]
+
+gates:
+  - id: FRESH50K_NO_OFFICIAL_EVAL
+    status: BLOCKED
+    effect: >
+      50K 的一切结果只能标为"训练数据审计 / 内部时间切分"，禁止标为官方评估复现。
+      若日后取得带版本记录的官方 eval split，须新开配置文件而非修改本文件。
+
+notes:
+  - "仅 2 个验证 origin、2 个测试 origin，统计功效极低；结论必须与 LT 并列呈现，且不得单独据此排名模型。"
+  - "训练窗仅 43 天 origin 跨度，长滞后特征（>28 天）在本版本上不可用。"
