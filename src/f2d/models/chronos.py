@@ -27,6 +27,7 @@ NATIVE_LEVELS = np.array([
     .55, .60, .65, .70, .75, .80, .85, .90, .95, .99])
 
 BASE_CHECKPOINT = "amazon/chronos-2"          # 119.5M，含原生 0.85
+BASE_REVISION = "29ec3766d36d6f73f0696f85560a422f50e8498c"  # pinned 2026-06-05
 SMALL_CHECKPOINT = "autogluon/chronos-2-small"  # 27.9M，**不含** 0.85，须插值
 
 

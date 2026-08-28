@@ -31,6 +31,8 @@ class ReplayConfig:
     lead_time_days: int
     review_cadence_days: int = 7
     shortage_mechanism: str = "lost_sales"
+    # None 时沿用固定 cadence；连续跨月回放可显式传自然月月初等不等距复核日。
+    review_days: tuple[int, ...] | None = None
 
 
 @dataclass
@@ -53,7 +55,8 @@ class ReplayResult:
 
 
 def replay(demand_path: np.ndarray, order_up_to: np.ndarray,
-           initial_inventory: np.ndarray, cfg: ReplayConfig) -> ReplayResult:
+           initial_inventory: np.ndarray, cfg: ReplayConfig,
+           initial_pipeline_arrivals: np.ndarray | None = None) -> ReplayResult:
     """运行连续回放。
 
     Parameters
@@ -62,6 +65,10 @@ def replay(demand_path: np.ndarray, order_up_to: np.ndarray,
     order_up_to : (n_series, n_reviews) 每个复核时点的订至水平 S_t
     initial_inventory : (n_series,) 第一天的期初库存
     cfg : ReplayConfig
+    initial_pipeline_arrivals : (n_series, n_schedule_days), optional
+        回放开始前已经承诺、并将在各相对日到货的数量。它们是所有候选政策
+        共享的 sunk commitments；默认无在途订单。日程可以长于评价窗口，
+        因为窗口外到货在窗口内仍属于库存位置的一部分。
 
     Returns
     -------
@@ -72,7 +79,13 @@ def replay(demand_path: np.ndarray, order_up_to: np.ndarray,
     L = cfg.lead_time_days
     R = cfg.review_cadence_days
 
-    review_days = list(range(0, n_days, R))
+    if cfg.review_days is None:
+        review_days = list(range(0, n_days, R))
+    else:
+        review_days = list(cfg.review_days)
+        if (review_days != sorted(set(review_days))
+                or any(t < 0 or t >= n_days for t in review_days)):
+            raise ValueError("review_days 必须是在评价窗口内严格递增且不重复的日序")
     n_reviews = len(review_days)
     if order_up_to.shape != (n_ser, n_reviews):
         raise ValueError(
@@ -89,10 +102,29 @@ def replay(demand_path: np.ndarray, order_up_to: np.ndarray,
     order = np.zeros((n_ser, n_days))
 
     # 到货调度表：orders_arriving[t] = 在 day t 到货的量 (n_ser,)
-    orders_arriving = np.zeros((n_ser, n_days + L + 1))
+    schedule_days = n_days + L + 1
+    if initial_pipeline_arrivals is not None:
+        initial_pipeline_arrivals = np.asarray(initial_pipeline_arrivals, float)
+        if (initial_pipeline_arrivals.ndim != 2
+                or initial_pipeline_arrivals.shape[0] != n_ser
+                or initial_pipeline_arrivals.shape[1] < n_days):
+            raise ValueError(
+                "initial_pipeline_arrivals 必须为 "
+                f"({n_ser}, n_schedule_days>=n_days)；收到 "
+                f"{initial_pipeline_arrivals.shape}")
+        if (np.any(~np.isfinite(initial_pipeline_arrivals))
+                or np.any(initial_pipeline_arrivals < 0)):
+            raise ValueError("initial_pipeline_arrivals 必须为有限非负数")
+        schedule_days = max(schedule_days, initial_pipeline_arrivals.shape[1])
 
-    # 初始 pipeline = 0（无在途订单）
-    cur_pipeline = np.zeros(n_ser)
+    orders_arriving = np.zeros((n_ser, schedule_days))
+    if initial_pipeline_arrivals is not None:
+        orders_arriving[:, :initial_pipeline_arrivals.shape[1]] = \
+            initial_pipeline_arrivals
+
+    # 回放前的在途库存等于全部尚未到货的 sunk commitments。
+    initial_pipeline = orders_arriving.sum(axis=1)
+    cur_pipeline = initial_pipeline.copy()
     review_idx = 0
 
     for t in range(n_days):
@@ -151,6 +183,11 @@ def replay(demand_path: np.ndarray, order_up_to: np.ndarray,
         violations.append(f"§7.2.3 I_end < 0: min {i_end.min():.2e}")
 
     # 4. pipeline[t] == pipeline[t-1] + order[t] - arrivals[t]
+    pipe0_expected = initial_pipeline + order[:, 0] - arrivals_mat[:, 0]
+    v40 = np.abs(pipeline[:, 0] - pipe0_expected)
+    if np.any(v40 > tol):
+        violations.append(
+            f"§7.2.4 pipeline conservation at t=0: max err {v40.max():.2e}")
     for t in range(1, n_days):
         pipe_expected = pipeline[:, t - 1] + order[:, t] - arrivals_mat[:, t]
         v4 = np.abs(pipeline[:, t] - pipe_expected)

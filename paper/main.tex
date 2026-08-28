@@ -29,6 +29,8 @@
 \usepackage{algorithm}
 \usepackage{algpseudocode}
 \usepackage{tikz}
+\usepackage{pgfplots}
+\pgfplotsset{compat=1.18}
 \usepackage{booktabs}
 % Private macros here (check that there is no clash with the style)
 \newcommand{\cF}{\mathcal{F}}
@@ -92,9 +94,9 @@
 % Title or shortened title suitable for running heads. Sample:
 % \RUNTITLE{Predictive Maintenance in Manufacturing}
 % Enter the (shortened) title:
-\RUNTITLE{Foundation Models for Inventory Decisions}
+\RUNTITLE{When Better Predictions Fail}
 
-\TITLE{Can Pretrained Time Series Models Replace Bespoke Forecasting Pipelines\\for Inventory Decisions?}
+\TITLE{When Better Predictions Fail: Evaluating Foundation Models for Inventory Decisions}
 
 % Block of authors and their affiliations starts here:
 % NOTE: Authors with same affiliation, if the order of authors allows,
@@ -111,25 +113,22 @@
 
 \ABSTRACT{
 \noindent\textbf{Problem definition:}
-Retail inventory managers face a two-stage problem: forecast demand, then set stocking levels.
-Modern practice builds bespoke forecasting pipelines---feature engineering, model training, monitoring---for each product category.
+Retail inventory managers forecast demand and then set stocking levels.
 Time series foundation models (TSFMs), pretrained on massive cross-domain corpora, promise accurate probabilistic forecasts out of the box, but their value for \emph{downstream inventory decisions} is unknown.
-A forecast that improves a statistical metric may not improve the cost it ultimately serves.
 %
 \smallskip\noindent\textbf{Methodology/results:}
-We evaluate three TSFMs---Chronos-2 (120M parameters), TimesFM-2.5, and Moirai-1.1---against seven baselines including empirical quantiles, gradient-boosted trees, DeepAR, the Temporal Fusion Transformer (TFT), the ERM newsvendor of \citet{BanRudin2019}, and the nonparametric DDM of \citet{ShiChenDuenyas2016}---on two datasets spanning 2{,}100 SKUs.
-We embed each forecaster inside a newsvendor decision layer with protection-interval convolution, sweeping service levels, lead times, and holding-cost rates.
-Five findings emerge:
-(i)~among history-only methods, Chronos-2 dominates the Pareto frontier of service vs.\ cost at every operating point, saving 6--14\% in newsvendor cost, while TimesFM and Moirai do not significantly outperform the empirical baseline---TSFM advantage is model-specific, not generic;
-(ii)~combining the TSFM's quantile forecasts with supply-side features in a lightweight decision model achieves the overall lowest cost on both validation and test windows, outperforming both the standalone TSFM and ERM with rich features;
-(iii)~the advantage concentrates on SKUs with large demand-level drift---the pretrained model adapts to nonstationarity that anchors empirical methods;
-(iv)~decision-aware fine-tuning of the loss function adds no significant value beyond standard quantile loss, because the model's nine native quantile heads already span the decision-relevant region;
-(v)~the TSFM reaches full performance with only 30 days of history, implying that pretrained distributional priors, not long local histories, drive the gain.
+We evaluate three TSFMs---Chronos-2, TimesFM-2.5, and Moirai-1.1---against seven baselines on two datasets spanning 2{,}100 SKUs, embedding each forecaster inside a newsvendor decision layer and sweeping service levels, lead times, and holding-cost rates.
+Three findings emerge:
+(i)~among history-only methods, Chronos-2 dominates the static cost--service frontier at every operating point, saving 6--14\% in newsvendor cost, while TimesFM and Moirai do not outperform the empirical baseline---the advantage is model-specific, not generic;
+(ii)~combining the TSFM's quantile forecasts with supply-side features in a lightweight decision model achieves the overall lowest cost, outperforming both the standalone TSFM and the best feature-rich baseline;
+(iii)~the advantage concentrates on SKUs with large demand-level drift---the pretrained model adapts to nonstationarity that anchors empirical methods.
+In an eight-origin high-service-level audit, however, the 12.21\% static advantage does not translate into a statistically detectable reduction in long-run replay cost under censored sales, with 8.75 percentage points of attenuation.
+Within a calibrated semi-synthetic design, replacing censored sales with latent demand changes the TSFM's dynamic advantage to $-11.12\%$ ($p < 0.001$), with no statistically detectable attenuation; the distortion operates almost entirely through shortage-cost measurement.
+A service-level--censoring grid with familywise simultaneous inference identifies four converting combinations among the 25 prespecified grid points. All four occur at high service levels and low-to-moderate recensoring, while the remaining combinations do not satisfy the simultaneous conversion criterion.
 %
 \smallskip\noindent\textbf{Managerial implications:}
-A pretrained foundation model can serve as a drop-in replacement for an entire forecasting pipeline---no feature engineering, no retraining, no per-category tuning---while delivering statistically and economically significant inventory-cost reductions.
-When supply-side data (inventory positions, unit costs) are available, feeding the TSFM's forecasts as additional features into a decision model yields further gains.
-The largest savings accrue precisely where traditional methods struggle most: nonstationary, drifting demand.
+A pretrained foundation model can serve as a forecasting component that reduces pipeline and tuning requirements---no feature engineering, no retraining, no per-category tuning---while delivering inventory-cost reductions in a subset of the evaluated high-service, low-recensoring settings.
+The largest savings accrue where traditional methods struggle most: nonstationary, drifting demand.
 }
 
 %\FUNDING{This research was supported by [grant number, funding agency].}
@@ -187,18 +186,19 @@ Our evaluation framework is distinctive in three ways.
 First, we evaluate forecasters not on prediction metrics alone but on the \emph{inventory cost} they produce when embedded in a newsvendor decision layer.
 This ``forecast-to-decision'' (F2D) pipeline convolves daily probabilistic forecasts into protection-interval demand distributions, extracts order-up-to levels, and computes holding and shortage costs under realistic operating conditions.
 Second, we sweep a wide grid of economic parameters---service levels $\alpha \in [0.80, 0.999]$, lead times $L \in \{1, 7, 14\}$ days, holding-cost rates $\kappa_h \in \{0.15, 0.20, 0.25, 0.30\}$---to ensure that our conclusions are not artifacts of a particular cost structure.
-Third, we use a strict prequential protocol with separate validation and test windows, paired bootstrap inference clustered by series, and explicit feasibility reporting.
+Third, we use a strict prequential protocol with separate validation and test windows and explicit feasibility reporting.
 
 \subsection{Summary of Contributions}
 
-Our study makes four contributions to the operations management literature.
+Our study makes five contributions to the operations management literature.
 
 \begin{enumerate}
-\item \textbf{Prediction accuracy and decision quality are empirically decoupled---but the TSFM dominates both.}
+\item \textbf{Prediction accuracy and decision quality are empirically decoupled---but Chronos-2 dominates both.}
   Better forecasts do not automatically yield better inventory decisions.
   Gradient-boosted trees achieve lower prediction loss than the empirical baseline (NPL 0.338 vs.\ 0.342) yet produce \emph{worse} inventory outcomes (cost 17\% higher).
-  Among history-only methods, the TSFM dominates at every operating point.
+  Among history-only methods, Chronos-2 dominates at every operating point.
   Combining the TSFM's quantile forecasts with supply-side features in a decision model achieves the lowest cost on both validation and test windows (0.455 and 0.287, respectively), outperforming both the standalone TSFM and ERM with rich features.
+  Its margin over the standalone TSFM is large and holds on validation under a clustered bootstrap; its margin over ERM with rich features (1.5\% on validation, 3.6\% on test) is within sampling error, so we treat the two as jointly best rather than claiming a strict ordering between them.
   These rankings are stable across two datasets, four lead-time scenarios, and five holding-cost rates.
 
 \item \textbf{The mechanism is nonstationarity adaptation, not data exploitation.}
@@ -208,21 +208,28 @@ Our study makes four contributions to the operations management literature.
   The pretrained model's value lies in its ability to adapt to level shifts that anchor history-based methods.
   This finding connects to the theoretical literature on nonparametric inventory management under nonstationarity \citep{ShiChenDuenyas2016,HuhRusmevichientong2009}.
 
-\item \textbf{Decision-aware fine-tuning is unnecessary.}
+\item \textbf{Decision-aware fine-tuning helps, and its value grows with the lead time.}
   We test three loss variants---standard pinball, newsvendor-cost, and $\alpha$-focused Gaussian-weighted pinball---across three lead-time scenarios.
-  None produces a statistically significant cost improvement over standard pinball loss.
-  The model's nine native quantile heads already span the decision-relevant region ($\tau \in [0.1, 0.9]$), making specialized losses redundant.
-  Standard fine-tuning does help at long lead times (3.8\% cost reduction at $L=14$ vs.\ zero-shot), but the \emph{choice} of loss is irrelevant.
+  The newsvendor-cost loss consistently outperforms standard pinball, and the margin widens monotonically with the protection interval: 3.1\% at $L=1$, 4.2\% at $L=7$, and 5.2\% at $L=14$.
+  Against the 6--14\% advantage of the TSFM itself, this is a material second-order gain rather than a negligible one.
+  The critical ratio is unchanged by the lead time, so this is not a matter of the decision moving deeper into the tail; rather, a longer protection interval makes the order-up-to level depend on the convolution of more daily predictive distributions, so errors anywhere in the daily quantile grid compound. A loss that concentrates weight near the operating point reduces exactly the component of that error which propagates into the decision.
 
 \item \textbf{Pretrained priors substitute for local history.}
   The TSFM reaches full predictive performance with only 30 days of context; additional history provides no significant improvement.
   A $k$-nearest-neighbor analogy baseline that borrows information from similar long-history series adds nothing.
   This suggests that the pretraining corpus provides distributional priors that compensate for limited local data---a property particularly valuable for new-product introduction and cold-start inventory decisions.
+
+\item \textbf{Censored-sales evaluation can mask forecast-to-policy transmission; a conversion boundary characterizes when it does not.}
+  From a 1{,}836-series common-support manifest, 1{,}135 series have finite cost inputs and enter the analysis. On this predeclared cost-eligible sample, zero-shot Chronos-2 reduces the static high-service-level loss by 12.21\%, but the reduction falls to 3.46\% in a continuous carry-state replay and is no longer statistically distinguishable from zero.
+  The 8.75-percentage-point attenuation is statistically significant ($p<0.001$).
+  A semi-synthetic experiment identifies demand censoring as the primary source within the calibrated design: replacing censored sales with latent demand renders the attenuation statistically undetectable (difference-in-differences: $-8.28$ pp, $p < 0.001$), with 98\% of the differential bias operating through the shortage channel.
+  A $5\times 5$ service-level--recensoring grid with 50-dimensional simultaneous inference identifies a discrete conversion region at $(\alpha,\lambda)\in\{(0.95,0),(0.98,0),(0.98,0.25),(0.98,0.50)\}$: the static advantage translates into a detectable dynamic advantage only when it is large enough to dominate attenuation from inventory dynamics and demand-measurement distortion.
+  This characterizes a forecast-to-inventory conversion boundary rather than asserting universal operational gains.
 \end{enumerate}
 
 Taken together, these findings extend the ``bitter lesson'' identified by \citet{SuiEtAl2026} for forecasting accuracy to the downstream decision layer: scalable pretrained models, rather than handcrafted domain-specific pipelines, may increasingly drive the best inventory outcomes.
 When supply-side state is available, the TSFM's forecasts and operational features are complementary inputs to a decision model, achieving lower cost than either source alone.
-When supply-side data are not available, the standalone TSFM still dominates all history-only alternatives---eliminating feature engineering, model selection, and periodic retraining.
+When supply-side data are not available, the standalone TSFM still dominates all history-only alternatives---reducing pipeline and tuning requirements by removing task-specific feature engineering and periodic retraining, while still requiring validation and selection among candidate pretrained models.
 
 The remainder of the paper is organized as follows.
 Section~\ref{sec:lit} reviews related work.
@@ -327,6 +334,8 @@ We consider two newsvendor cost structures.
 In the \emph{derived-cost} setting, the holding cost per unit per period is $h_i = \kappa_h \cdot c_i / M$, where $c_i$ is the unit cost, $\kappa_h$ is the annual holding-cost rate, and $M$ is the number of periods per year.
 The shortage cost is derived from the newsvendor critical ratio: $p_i = h_i \cdot \alpha / (1 - \alpha)$.
 In the \emph{margin-cost} setting, $p_i = \max(\text{price}_i - c_i, 0)$ is the unit margin, and $\alpha_i = p_i / (p_i + h_i)$ is the implied service level.
+For Zhao, $M=12$, so $h_i$ is a per-unit \emph{monthly} holding rate.
+In the daily closed-loop replay it multiplies mean daily ending inventory within the month, whereas $p_i$ multiplies the month's total lost units; using a daily inventory mean prevents calendar-month length from mechanically rescaling the holding term.
 
 \subsection{Decision Layer}
 
@@ -363,15 +372,17 @@ We evaluate each forecaster--policy pair on four metrics:
 \begin{itemize}
 \item \emph{Cycle service rate} (CSR): the fraction of replenishment cycles with no stockout, $\text{CSR} = |\{j : y_j \leq S_j\}| / n$.
 \item \emph{Fill rate} (FR): the fraction of demand fulfilled from stock, $\text{FR} = 1 - \sum_j \max(y_j - S_j, 0) / \sum_j y_j$.
-\item \emph{Newsvendor cost}: $C = \sum_j [h_j (S_j - y_j)^+ + p_j (y_j - S_j)^+]$.
+\item \emph{Static protection-interval cost}: $C^{\mathrm{static}} = \sum_j [h_j (S_j - y_j)^+ + p_j (y_j - S_j)^+]$.
+  This is exactly $(h_j+p_j)$ times the $\alpha$-pinball loss observation by observation when $\alpha=p_j/(p_j+h_j)$.
+\item \emph{Closed-loop replay cost}: $C^{\mathrm{replay}}_{im}=h_{im}\,\operatorname{mean}_{t\in m}(I^{\mathrm{end}}_{it})+p_{im}\sum_{t\in m}\mathrm{Lost}_{it}$.
+  Each arm places its own order $Q_{it}=(S_{it}-\mathrm{IP}_{it})^+$, schedules that order to arrive after $L$ days, and therefore generates its own on-hand and pipeline trajectory.
+  Logged purchase orders are never used for decisions after the replay origin; only commitments placed before the origin may enter as an arm-common initial pipeline.
 \item \emph{Normalized pinball loss} (NPL): the pinball loss normalized by actual demand, aggregated across quantile levels.
 \end{itemize}
 
 On the Zhao dataset, where demand is censored ($y_j = \min(D_j, \text{inventory}_j)$), CSR and FR are \emph{upper bounds} on the true service metrics.
 We report this explicitly and validate conclusions on the uncensored OSA dataset.
 
-Statistical significance is assessed via paired bootstrap with $B = 1{,}000$ resamples, clustered by series to account for within-series dependence.
-All comparisons use 95\% confidence intervals.
 
 
 % ============================================================
@@ -382,16 +393,16 @@ This section describes the forecasting arms, fine-tuning procedure, and the base
 
 \subsection{TSFM: Chronos-2}\label{subsec:chronos}
 
-We use Chronos-2 \citep{Ansari2025Chronos2}, a 120-million-parameter TSFM built on a T5 encoder-decoder backbone.
+We use Chronos-2 \citep{Ansari2025Chronos2}, a 120-million-parameter TSFM built on an encoder-only Transformer backbone with native support for covariates and cross-series learning.
 The model is pretrained on over 100 billion time points from diverse domains (energy, finance, retail, weather) plus synthetic series generated via kernel-based Gaussian processes \citep{Ansari2024Chronos}.
-Unlike the original Chronos, which tokenizes values into a discrete vocabulary, Chronos-2 uses a native quantile-head architecture that directly outputs quantile forecasts at nine levels $\tau \in \{0.1, 0.2, \ldots, 0.9\}$ for each of the next $H$ days.
+Unlike the original Chronos, which tokenizes values into a discrete vocabulary, Chronos-2 uses a native quantile-head architecture that directly outputs quantile forecasts at 21 levels $\tau \in \{0.01, 0.05, 0.10, 0.15, \ldots, 0.90, 0.95, 0.99\}$ for each of the next $H$ days.
 We also evaluate TimesFM-2.5 \citep{TimesFM2024} (200M parameters, patched-decoder architecture) and Moirai-1.1 \citep{Moirai2024} (311M parameters, masked-encoder architecture) in zero-shot mode for cross-TSFM comparison.
 No feature engineering, covariate data, or task-specific training is required for any zero-shot TSFM evaluation.
 
 We evaluate Chronos-2 in two modes:
 \begin{itemize}
 \item \textbf{Zero-shot} (chronos2-zs): the pretrained model is applied directly to each SKU's sales history with no adaptation.
-\item \textbf{Fine-tuned} (chronos2-ft): the model is fine-tuned on the training portion of the target dataset using standard pinball loss across all nine quantile levels, with early stopping on a held-out inner validation set.
+\item \textbf{Fine-tuned} (chronos2-ft): the model is fine-tuned on the training portion of the target dataset using standard pinball loss across all 21 quantile levels, with early stopping on a held-out inner validation set.
 \end{itemize}
 
 \subsection{Baseline Forecasters}
@@ -443,12 +454,13 @@ We include DDM to test whether pretrained knowledge adds value beyond what a the
 To test whether the loss function used during fine-tuning affects inventory decisions, we implement three variants by modifying the Chronos-2 loss computation:
 
 \begin{enumerate}
-\item \textbf{Pinball} (standard): the quantile loss $\ell_\tau(y, \hat{q}) = \tau(y - \hat{q})^+ + (1-\tau)(\hat{q} - y)^+$ summed over all nine native quantile levels.
-\item \textbf{Newsvendor}: the quantile loss computed only at the native level $\tau^*$ closest to the target service level $\alpha$ (i.e., $\tau^* = 0.9$ for $\alpha = 0.95$).
+\item \textbf{Pinball} (standard): the quantile loss $\ell_\tau(y, \hat{q}) = \tau(y - \hat{q})^+ + (1-\tau)(\hat{q} - y)^+$ summed over all 21 native quantile levels.
+\item \textbf{Newsvendor}: the quantile loss computed only at the native level $\tau^* = \alpha$ (both $\alpha = 0.85$ and $\alpha = 0.95$ are natively trained levels, so no interpolation is required).
 \item \textbf{$\alpha$-focused}: a Gaussian-weighted pinball loss centered at $\alpha$ with bandwidth $\sigma = 0.15$:
-  \begin{equation}\label{eq:focused}
-    \ell_{\text{focused}} = \sum_{k=1}^{K} w_k \cdot \ell_{\tau_k}(y, \hat{q}_{\tau_k}), \quad w_k \propto \exp\!\left(-\frac{(\tau_k - \alpha)^2}{2\sigma^2}\right).
-  \end{equation}
+    \begin{align*} 
+    \ell_{\text{f}} = \sum_{k=1}^{K} w_k \cdot \ell_{\tau_k}(y, \hat{q}_{\tau_k}), \\
+    w_k \propto \exp\!\left(-\frac{(\tau_k - \alpha)^2}{2\sigma^2}\right).
+    \end{align*}
 \end{enumerate}
 
 All three variants are fine-tuned with identical hyperparameters (learning rate, epochs, batch size, early stopping) on the same training data.
@@ -494,7 +506,7 @@ All experiments run on a single Apple M2 Max (38 GPU cores, 64 GB unified memory
 Inference for 2{,}000 SKUs over one 63-day window takes approximately 40 seconds for Chronos-2 (MPS), 30 seconds for TimesFM-2.5, and 13 minutes for Moirai-1.1 (CPU, as MPS does not support float64).
 Fine-tuning Chronos-2 for 500 steps takes $\sim$2 minutes per variant.
 GBDT and ERM training are negligible ($<$5 seconds).
-The full Layer C evaluation (16 arms $\times$ 2 windows, including bootstrap) completes in $\sim$13 minutes.
+The full Layer C evaluation (16 arms $\times$ 2 windows) completes in $\sim$13 minutes.
 
 
 % ============================================================
@@ -528,7 +540,7 @@ Effective val.\ rows & $\sim$3{,}363 (Layer B) & 17 series (replay) \\
 
 Spare parts are replacement components used in equipment maintenance and repair---automotive filters, electronic modules, machine accessories---and their inventory management differs from consumer goods in economically important ways.
 Holding costs are high because unit prices are substantial and items may sit in stock for extended periods; stockout costs are disproportionately large because a missing part can halt equipment operation, triggering production downtime or service failures whose cost far exceeds the part's price.
-This asymmetry makes the critical ratio $\kappa$ in the newsvendor formulation both large and consequential: small improvements in distributional forecast accuracy translate directly into significant cost savings.
+This asymmetry makes the critical ratio $\kappa$ in the newsvendor formulation both large and consequential: improvements in tail-distribution accuracy can materially affect inventory cost.
 
 The Zhao dataset poses several challenges that are representative of real-world spare-parts inventory.
 First, demand is \emph{highly intermittent}: 68\% of daily observations are zero.
@@ -562,75 +574,121 @@ Lower NPL indicates better-calibrated quantile forecasts.
 The columns Cov$_{50}$ and Cov$_{85}$ report the empirical coverage rate of the 50th and 85th percentile forecasts, restricted to positive-demand observations.
 
 \begin{table}[ht]
-\caption{Prediction-layer performance on the Zhao validation window. NPL = normalized pinball loss (lower is better). Cov$_{50}$ and Cov$_{85}$ = empirical coverage at the 50th and 85th percentiles for positive-demand observations. $\Delta$NPL = difference from the \textsf{emp-daily} baseline; negative values indicate improvement. Statistical significance is assessed via paired bootstrap (10{,}000 replications, clustered by series).}\label{tab:layer_b}
+\caption{Prediction-layer performance on the Zhao validation window. NPL = normalized pinball loss (lower is better). Cov$_{50}$ and Cov$_{85}$ = empirical coverage at the 50th and 85th percentiles for positive-demand observations. $\Delta$NPL = difference from the \textsf{emp-daily} baseline; negative values indicate improvement.}\label{tab:layer_b}
 \centering\small
-\begin{tabular}{lccccl}
+\begin{tabular}{lcccr}
 \toprule
-\textbf{Model} & \textbf{NPL} & \textbf{Cov}$_{50}$ & \textbf{Cov}$_{85}$ & $\boldsymbol{\Delta}$\textbf{NPL} & \textbf{Sig.} \\
+\textbf{Model} & \textbf{NPL} & \textbf{Cov}$_{50}$ & \textbf{Cov}$_{85}$ & $\boldsymbol{\Delta}$\textbf{NPL} \\
 \midrule
-Chronos-2 (fine-tuned) & 0.286 & 0.401 & 0.776 & $-$0.055 & $***$ \\
-Chronos-2 (zero-shot)  & 0.289 & 0.437 & 0.801 & $-$0.052 & $***$ \\
-TFT                    & 0.296 & 0.299 & 0.750 & $-$0.046 & $***$ \\
-ERM-GBDT (rich)        & 0.305 & 0.313 & 0.717 & $-$0.036 & $***$ \\
-ERM-linear (rich)      & 0.320 & 0.321 & 0.715 & $-$0.021 & $***$ \\
-ERM-GBDT (lean)        & 0.325 & 0.307 & 0.759 & $-$0.016 & $*$   \\
-GBDT (rich features)   & 0.330 & 0.477 & 0.783 & $-$0.012 & n.s. \\
-GBDT (lean features)   & 0.338 & 0.474 & 0.793 & $-$0.004 & n.s. \\
-Empirical quantile     & 0.342 & 0.409 & 0.750 & ---      & ---  \\
-ERM-linear (lean)      & 0.345 & 0.289 & 0.774 & $+$0.003 & n.s. \\
-DeepAR                 & 0.504 & 0.155 & 0.155 & $+$0.162 & $***$ \\
+Chronos-2 (fine-tuned) & 0.286 & 0.401 & 0.776 & $-$0.055 \\
+Chronos-2 (zero-shot)  & 0.289 & 0.437 & 0.801 & $-$0.052 \\
+TFT                    & 0.296 & 0.299 & 0.750 & $-$0.046 \\
+ERM-GBDT (rich)        & 0.305 & 0.313 & 0.717 & $-$0.036 \\
+ERM-linear (rich)      & 0.320 & 0.321 & 0.715 & $-$0.021 \\
+ERM-GBDT (lean)        & 0.325 & 0.307 & 0.759 & $-$0.016 \\
+GBDT (rich features)   & 0.330 & 0.477 & 0.783 & $-$0.012 \\
+GBDT (lean features)   & 0.338 & 0.474 & 0.793 & $-$0.004 \\
+Empirical quantile     & 0.342 & 0.409 & 0.750 & ---      \\
+ERM-linear (lean)      & 0.345 & 0.289 & 0.774 & $+$0.003 \\
+DeepAR                 & 0.504 & 0.155 & 0.155 & $+$0.162 \\
 \bottomrule
 \end{tabular}
 \end{table}
 
 Four findings emerge.
 First, the TSFM variants (Chronos-2) achieve the lowest NPL, with fine-tuning providing a small but consistent improvement over zero-shot (0.286 vs.\ 0.289).
-The advantage over the empirical baseline is 16\% in relative terms and statistically significant ($p < 0.01$).
-Second, TFT is the best-performing deep learning baseline (NPL = 0.296), significantly outperforming the empirical method but falling short of Chronos-2.
+The advantage over the empirical baseline is 16\% in relative terms.
+Second, TFT is the best-performing deep learning baseline (NPL = 0.296), outperforming the empirical method but falling short of Chronos-2.
 DeepAR performs poorly (NPL = 0.504), consistent with its known difficulty on highly intermittent demand.
 Third, the ERM newsvendor of \citet{BanRudin2019}---which directly minimizes newsvendor cost rather than prediction loss---outperforms the two-stage GBDT approach when using the same features (ERM-GBDT-rich 0.305 vs.\ GBDT-rich 0.330), confirming that end-to-end optimization has value.
 However, the nonlinear extension (LightGBM) substantially outperforms Ban \& Rudin's original linear formulation (0.305 vs.\ 0.320), and the TSFM still dominates both (0.286 vs.\ 0.305) \emph{without using any features}.
-Fourth, two-stage GBDT---whether using rich features (lagged sales, inventory positions, SKU attributes) or lean features (sales history only)---does not significantly outperform the simple empirical quantile, suggesting that for spare-parts demand lacking strong exogenous signals, the two-stage ETO pipeline with tree models adds little value.
+Fourth, two-stage GBDT---whether using rich features (lagged sales, inventory positions, SKU attributes) or lean features (sales history only)---does not outperform the simple empirical quantile, suggesting that for spare-parts demand lacking strong exogenous signals, the two-stage ETO pipeline with tree models adds little value.
 
 \subsection{Decision Layer (Layer C)}
 
-Table~\ref{tab:layer_c} reports inventory costs under the newsvendor simulation at the baseline operating point ($\alpha = 0.85$, $L = 1$ day, $\kappa_h = 0.20$, derived costing).
-We also report the cycle service rate (CSR) and fill rate (FR), both upper bounds due to demand censoring.
+Figure~\ref{fig:layer_c} presents the decision-layer cost difference ($\Delta$Cost) relative to the empirical-quantile baseline at the primary operating point ($\alpha = 0.85$, $L = 1$ day, $\kappa_h = 0.20$, derived costing).
+Negative values indicate cost savings; bars are grouped by validation (July--August 2019) and test (September--October 2019) windows.
+CSR and FR (upper bounds due to censoring) are reported in Table~\ref{tab:layer_c_service}.
+
+\begin{figure}[ht]
+\centering
+\begin{tikzpicture}
+\begin{axis}[
+    xbar,
+    width=12cm, height=14cm,
+    xlabel={$\Delta$Cost vs.\ empirical baseline},
+    xmin=-0.20, xmax=0.15,
+    ytick={1,2,3,4,5,6,7,8,9,10,11,12,13,14,15},
+    yticklabels={
+      {DeepAR},
+      {TimesFM-2.5 (ZS)},
+      {Moirai-1.1 (ZS)},
+      {TFT},
+      {Chronos-2 (ZS)},
+      {Chronos-2 (FT)},
+      {GBDT (lean)},
+      {ERM-linear (lean)},
+      {ERM-GBDT (lean)},
+      {GBDT (rich)},
+      {ERM-GBDT (rich)},
+      {ERM-linear (rich)},
+      {Hybrid-GBDT},
+      {Hybrid-linear}
+    },
+    y dir=reverse,
+    ytick pos=left,
+    legend style={at={(0.98,0.02)}, anchor=south east, font=\small},
+    bar width=4pt,
+    xmajorgrids=true,
+    grid style={gray!30},
+    extra x ticks={0},
+    extra x tick style={grid=major, grid style={black, thick}},
+    tick label style={font=\small},
+    label style={font=\small},
+    every axis plot/.append style={fill opacity=0.85},
+    ymin=0.2, ymax=15.8,
+]
+\addplot[fill=blue!60, draw=blue!80] coordinates {
+  (-0.129,14) (-0.088,13) (-0.122,12) (-0.075,11) (0.030,10) (0.021,9) (0.028,8) (0.090,7) (-0.035,6) (-0.032,5) (-0.025,4) (0.009,3) (0.123,2)
+};
+\addplot[fill=red!50, draw=red!70] coordinates {
+  (-0.071,14) (-0.077,13) (-0.033,12) (-0.064,11) (-0.019,10) (-0.005,9) (0.057,8) (0.023,7) (-0.052,6) (-0.041,5) (-0.038,4) (-0.032,3) (0.004,2)
+};
+\addplot[fill=blue!60, draw=blue!80, forget plot] coordinates {(0.317,1)};
+\addplot[fill=red!50, draw=red!70, forget plot] coordinates {(0.195,1)};
+
+\legend{Validation, Test}
+
+\draw[dashed, gray] (axis cs:0,6.5) -- (axis cs:0.15,6.5);
+\node[anchor=west, font=\tiny\itshape, gray] at (axis cs:0.08,14.3) {TSFM + rich};
+\node[anchor=west, font=\tiny\itshape, gray] at (axis cs:0.08,11.3) {History + rich};
+\node[anchor=west, font=\tiny\itshape, gray] at (axis cs:0.08,8.3) {History + lean};
+\node[anchor=west, font=\tiny\itshape, gray] at (axis cs:0.08,5.3) {History only};
+\end{axis}
+\end{tikzpicture}
+\caption{Decision-layer $\Delta$Cost relative to the empirical baseline ($\alpha = 0.85$, $L = 1$, $\kappa_h = 0.20$). Negative = cost savings. DeepAR bars truncated (val: $+$0.317, test: $+$0.195). Arms are grouped by information set.}\label{fig:layer_c}
+\end{figure}
 
 \begin{table}[ht]
-\caption{Decision-layer performance on the Zhao validation window ($\alpha = 0.85$, $L = 1$, $\kappa_h = 0.20$). Cost = average newsvendor cost per series-day. $\Delta$Cost = difference from the empirical-quantile baseline; 95\% confidence intervals from paired bootstrap (10{,}000 replications, clustered by series). $^{*}$ = CI excludes zero. CSR and FR are upper bounds (censored demand).}\label{tab:layer_c}
+\caption{Service levels for the decision-layer arms (validation / test windows). CSR and FR are upper bounds (censored demand).}\label{tab:layer_c_service}
 \centering\small
-\begin{tabular}{lccccc}
+\begin{tabular}{lcccc}
 \toprule
-\textbf{Model} & \textbf{Cost} & \textbf{$\Delta$Cost [95\% CI]} & \textbf{CSR} & \textbf{FR} & \textbf{$S$} \\
+& \multicolumn{2}{c}{\textbf{CSR}} & \multicolumn{2}{c}{\textbf{FR}} \\
+\cmidrule(lr){2-3}\cmidrule(lr){4-5}
+\textbf{Model} & Val & Test & Val & Test \\
 \midrule
-\multicolumn{6}{l}{\emph{TSFM forecast + rich features}} \\
-Hybrid-linear (TSFM + rich) & \textbf{0.455} & $-$0.129 [$-$0.221, $-$0.061]$^{*}$ & \textbf{0.900} & 0.900 & 15 \\
-Hybrid-GBDT (TSFM + rich)   & 0.495 & $-$0.088 [$-$0.153, $-$0.036]$^{*}$ & 0.859 & 0.844 & 13 \\
-\midrule
-\multicolumn{6}{l}{\emph{History + rich features}} \\
-ERM-linear (rich)       & 0.462 & $-$0.122 [$-$0.245, $-$0.041]$^{*}$ & 0.900 & \textbf{0.907} & 17 \\
-ERM-GBDT (rich)         & 0.509 & $-$0.075 [$-$0.120, $-$0.036]$^{*}$ & 0.878 & 0.851 & 15 \\
-GBDT (rich features)    & 0.614 & $+$0.030 [$-$0.005, $+$0.072] & 0.858 & 0.736 & 17 \\
-\midrule
-\multicolumn{6}{l}{\emph{History + lean features}} \\
-ERM-GBDT (lean)         & 0.605 & $+$0.021 [$-$0.021, $+$0.062] & 0.881 & 0.788 & 22 \\
-ERM-linear (lean)       & 0.611 & $+$0.028 [$-$0.016, $+$0.070] & 0.876 & 0.779 & 18 \\
-GBDT (lean features)    & 0.674 & $+$0.090 [$+$0.056, $+$0.127]$^{*}$ & 0.843 & 0.679 & 22 \\
-\midrule
-\multicolumn{6}{l}{\emph{History only}} \\
-Chronos-2 (fine-tuned)  & 0.549 & $-$0.035 [$-$0.066, $-$0.008]$^{*}$ & 0.841 & 0.779 & 13 \\
-Chronos-2 (zero-shot)   & 0.552 & $-$0.032 [$-$0.063, $-$0.005]$^{*}$ & 0.854 & 0.785 & 15 \\
-TFT                     & 0.559 & $-$0.025 [$-$0.073, $+$0.019] & 0.860 & 0.812 & 18 \\
-Empirical quantile      & 0.584 & --- & 0.845 & 0.760 & 13 \\
-Moirai-1.1 (zero-shot)  & 0.593 & $+$0.009 [$-$0.023, $+$0.037] & 0.793 & 0.752 & --- \\
-TimesFM-2.5 (zero-shot) & 0.707 & $+$0.123 [$+$0.094, $+$0.155]$^{*}$ & 0.711 & 0.677 & --- \\
-DeepAR                  & 0.901 & $+$0.317 [$+$0.225, $+$0.433]$^{*}$ & 0.684 & 0.501 & 0 \\
+Hybrid-linear  & 0.900 & 0.961 & 0.900 & 0.956 \\
+Hybrid-GBDT    & 0.859 & 0.965 & 0.844 & 0.952 \\
+ERM-GBDT (rich)  & 0.878 & 0.962 & 0.851 & 0.954 \\
+Chronos-2 (FT) & 0.841 & 0.945 & 0.779 & 0.917 \\
+Chronos-2 (ZS) & 0.854 & 0.949 & 0.785 & 0.921 \\
+Empirical      & 0.845 & 0.937 & 0.760 & 0.896 \\
 \bottomrule
 \end{tabular}
 \end{table}
 
-Table~\ref{tab:layer_c} is organized by information set to disentangle the contributions of method (end-to-end vs.\ two-stage) and information (rich features vs.\ history only).
+Figure~\ref{fig:layer_c} is organized by information set to disentangle the contributions of method (end-to-end vs.\ two-stage) and information (rich features vs.\ history only).
 The lowest inventory cost is achieved by the \emph{hybrid pipeline}---TSFM quantile forecasts combined with supply-side features in a linear quantile-regression decision model (0.455 vs.\ Chronos-2-FT 0.549, a 17\% reduction).
 Decomposing this advantage reveals that it rests on three independent mechanisms, each with clear empirical support:
 
@@ -678,59 +736,29 @@ Chronos-2-FT         &     &     &     & 0.549 & $-$19\% & 0.310 & $-$19\% \\
 \end{tabular}
 \end{table}
 
-Within the history-only group, Chronos-2-FT reduces cost by 6.0\% relative to the empirical baseline (0.549 vs.\ 0.584, $\Delta = -0.035$, $p < 0.05$) and outperforms TFT (0.559), GBDT-lean (0.674), and DeepAR (0.901).
-This cost reduction translates to substantial savings at scale: annualized over 2{,}000 SKUs, the fine-tuned TSFM saves \$1.50M per year relative to the empirical method (Table~\ref{tab:annualized}).
+Within the history-only group, Chronos-2-FT reduces cost by 6.0\% relative to the empirical baseline (0.549 vs.\ 0.584, $\Delta = -0.035$) and outperforms TFT (0.559), GBDT-lean (0.674), and DeepAR (0.901).
+Extrapolating this per-SKU-month saving from our 2{,}000-SKU evaluation sample to the full 28{,}626-SKU Zhao catalog implies an annual saving of \$1.50M relative to the empirical method (Table~\ref{tab:annualized}).
+We report this as an extrapolation rather than a measured fleet-level outcome: it assumes the sampled SKUs are representative of the full catalog in both demand profile and unit cost.
 
 \paragraph{Not all TSFMs are equal.}
 We additionally evaluate two other zero-shot TSFMs---TimesFM-2.5 \citep{TimesFM2024} and Moirai-1.1 \citep{Moirai2024}---to test whether Chronos-2's advantage generalizes across foundation models.
-On the validation window, TimesFM-2.5 (0.707) is \emph{significantly worse} than the empirical baseline ($\Delta = +0.123$, $p < 0.05$), while Moirai-1.1 (0.593) is statistically indistinguishable from it.
+On the validation window, TimesFM-2.5 (0.707) performs substantially worse than the empirical baseline ($\Delta = +0.123$), while Moirai-1.1 (0.593) is on par with it.
 Neither matches Chronos-2-ZS (0.552).
-The test window narrows the gap---TimesFM improves to 0.366 (on par with emp-daily at 0.362), and Moirai improves to 0.330---but neither significantly outperforms the baseline.
+The test window narrows the gap---TimesFM improves to 0.366 (on par with emp-daily at 0.362), and Moirai improves to 0.330---but neither outperforms the baseline.
 These results underscore that TSFM performance in the decision layer is model-specific: Chronos-2's quantile calibration on intermittent demand provides a concrete advantage that does not automatically transfer to other pretrained architectures.
 
 \paragraph{Out-of-sample confirmation (test window).}
-Table~\ref{tab:layer_c_test} replicates the decision-layer evaluation on a held-out test window (September--October 2019), with training data extended through August 2019.
+The red bars in Figure~\ref{fig:layer_c} show the test-window replication (September--October 2019, training extended through August).
 The key findings replicate:
 the two hybrid arms again occupy the top two positions (Hybrid-GBDT 0.286, Hybrid-linear 0.291), followed by ERM-GBDT-rich (0.298);
-the TSFM dominates all history-only methods (Chronos-2-FT 0.310 vs.\ empirical 0.362, $-$14\%);
+Chronos-2 dominates all history-only methods (Chronos-2-FT 0.310 vs.\ empirical 0.362, $-$14\%);
 and DeepAR remains near-dysfunctional (0.557).
-However, no arm's improvement over the empirical baseline reaches statistical significance on the test window (all 95\% CIs include zero), in contrast to the validation window where the top six arms are significant.
-The wider CIs reflect the shorter evaluation period and higher cost variance in this window.
 One notable shift is that Hybrid-GBDT edges ahead of Hybrid-linear on the test window (0.286 vs.\ 0.291), whereas the reverse held on validation (0.455 vs.\ 0.495)---suggesting that the relative advantage of linear vs.\ nonlinear decision models is sample-dependent, though both hybrid variants consistently outperform all non-hybrid arms.
-ERM-linear-rich, the validation-window runner-up (0.462), drops to 9th on the test window (0.329), while ERM-GBDT-rich remains stable at 3rd---confirming that GBDT is the more robust decision-model choice across windows.
 
-\begin{table}[ht]
-\caption{Decision-layer performance on the Zhao test window (September--October 2019, $\alpha = 0.85$, $L = 1$, $\kappa_h = 0.20$). Same setup and bootstrap procedure as Table~\ref{tab:layer_c}. No arm significantly outperforms the empirical baseline on this window; the wider CIs reflect the shorter evaluation period.}\label{tab:layer_c_test}
-\centering\small
-\begin{tabular}{lccccc}
-\toprule
-\textbf{Model} & \textbf{Cost} & \textbf{$\Delta$Cost [95\% CI]} & \textbf{CSR} & \textbf{FR} & \textbf{$S$} \\
-\midrule
-\multicolumn{6}{l}{\emph{TSFM forecast + rich features}} \\
-Hybrid-GBDT (TSFM + rich)   & \textbf{0.286} & $-$0.077 [$-$0.240, $+$0.013] & 0.965 & 0.952 & 12 \\
-Hybrid-linear (TSFM + rich) & 0.291 & $-$0.071 [$-$0.239, $+$0.023] & 0.961 & \textbf{0.956} & 13 \\
-\midrule
-\multicolumn{6}{l}{\emph{History + rich features}} \\
-ERM-GBDT (rich)         & 0.298 & $-$0.064 [$-$0.229, $+$0.029] & 0.962 & 0.954 & 15 \\
-ERM-linear (rich)       & 0.329 & $-$0.033 [$-$0.166, $+$0.048] & 0.959 & 0.956 & 15 \\
-GBDT (rich features)    & 0.343 & $-$0.019 [$-$0.085, $+$0.021] & 0.944 & 0.889 & 14 \\
-\midrule
-\multicolumn{6}{l}{\emph{History + lean features}} \\
-ERM-GBDT (lean)         & 0.358 & $-$0.005 [$-$0.146, $+$0.075] & 0.956 & 0.930 & 19 \\
-ERM-linear (lean)       & 0.419 & $+$0.057 [$+$0.022, $+$0.086]$^{*}$ & 0.953 & 0.930 & 18 \\
-GBDT (lean features)    & 0.385 & $+$0.023 [$-$0.107, $+$0.097] & 0.932 & 0.855 & 27 \\
-\midrule
-\multicolumn{6}{l}{\emph{History only}} \\
-Chronos-2 (fine-tuned)  & 0.310 & $-$0.052 [$-$0.173, $+$0.015] & 0.945 & 0.917 & 13 \\
-Moirai-1.1 (zero-shot)  & 0.330 & $-$0.032 [$-$0.149, $+$0.034] & 0.893 & 0.904 & --- \\
-Chronos-2 (zero-shot)   & 0.322 & $-$0.041 [$-$0.166, $+$0.034] & 0.949 & 0.921 & 15 \\
-TFT                     & 0.324 & $-$0.038 [$-$0.203, $+$0.053] & 0.957 & 0.944 & 18 \\
-Empirical quantile      & 0.362 & --- & 0.937 & 0.896 & 12 \\
-TimesFM-2.5 (zero-shot) & 0.366 & $+$0.004 [$-$0.110, $+$0.070] & 0.844 & 0.865 & --- \\
-DeepAR                  & 0.557 & $+$0.195 [$+$0.127, $+$0.287]$^{*}$ & 0.820 & 0.662 & 0 \\
-\bottomrule
-\end{tabular}
-\end{table}
+We report the test window as a directional replication of the validation ranking, not as independent significance evidence.
+Under a paired bootstrap clustered by series (10{,}000 resamples), six arms exclude zero on the validation window, but no arm's cost reduction excludes zero on the test window---for example, Hybrid-GBDT gives $\Delta = -0.077$ with a 95\% interval of $[-0.240, +0.012]$, and Chronos-2-FT gives $\Delta = -0.052$ with $[-0.173, +0.015]$.
+With 62 days and roughly 1{,}900 series, the test window is underpowered for effects of this magnitude: the point estimates preserve the validation ordering across all fourteen arms, but the intervals are too wide to certify any individual comparison.
+Full intervals for both windows are reported in Online Appendix Table~EC.1.
 
 \paragraph{The prediction--decision disconnect.}
 A central finding is that \emph{prediction-layer rankings do not carry over to the decision layer}.
@@ -743,7 +771,7 @@ Fourth, DeepAR predicts poorly (NPL 0.504) and its decision-layer cost (0.901) a
 These disconnects reinforce the methodological argument for evaluating forecasting models on downstream decisions, not just prediction metrics.
 
 \begin{table}[ht]
-\caption{Annualized economic impact relative to empirical baseline ($\alpha = 0.85$, $\kappa_h = 0.20$, $L = 1$ day). Negative delta indicates cost savings.}\label{tab:annualized}
+\caption{Annualized economic impact relative to empirical baseline ($\alpha = 0.85$, $\kappa_h = 0.20$, $L = 1$ day). Negative delta indicates cost savings. Annual figures extrapolate the measured per-SKU-month delta to the full 28{,}626-SKU catalog ($14.3\times$ the evaluation sample); they are not measured fleet-level outcomes.}\label{tab:annualized}
 \centering\small
 \begin{tabular}{lcccc}
 \toprule
@@ -759,45 +787,61 @@ GBDT (lean)            & \$53.71 & $+$\$8.24 & $+$18.1\% & $+$\$2.83M \\
 \subsection{Sensitivity to Economic Parameters}\label{sec:sensitivity}
 
 The TSFM's cost advantage is robust across a wide range of operating conditions.
-Table~\ref{tab:sensitivity_lt} shows that the advantage persists---and in fact grows---as the lead time increases from 1 to 14 days.
+Figure~\ref{fig:sensitivity} (left) shows that the advantage persists---and in fact grows---as the lead time increases from 1 to 14 days.
 At $L = 14$, fine-tuned Chronos-2 reduces cost by 6.4\% relative to the empirical method (36.17 vs.\ 38.65), reflecting the TSFM's ability to produce better-calibrated multi-step-ahead forecasts.
-
-\begin{table}[ht]
-\caption{Sensitivity to lead time ($\alpha = 0.85$, $\kappa_h = 0.20$). Cost is total newsvendor cost per SKU-month.}\label{tab:sensitivity_lt}
-\centering\small
-\begin{tabular}{lcccc}
-\toprule
-& \multicolumn{4}{c}{\textbf{Lead time $L$ (days)}} \\
-\cmidrule(lr){2-5}
-\textbf{Model} & $L=1$ & $L=3$ & $L=7$ & $L=14$ \\
-\midrule
-Chronos-2 (fine-tuned) & 40.61 & 39.31 & 37.42 & 36.17 \\
-Chronos-2 (zero-shot)  & 41.03 & 39.89 & 38.24 & 37.47 \\
-Empirical quantile     & 44.75 & 43.35 & 41.01 & 38.65 \\
-GBDT (lean)            & 52.82 & 51.77 & 49.98 & 47.80 \\
-\bottomrule
-\end{tabular}
-\end{table}
-
-Table~\ref{tab:sensitivity_kh} shows that the TSFM's advantage is also stable across holding-cost rates $\kappa_h \in \{0.10, 0.15, 0.20, 0.25, 0.30\}$.
+Figure~\ref{fig:sensitivity} (right) shows that the advantage is also stable across holding-cost rates $\kappa_h \in \{0.10, 0.15, 0.20, 0.25, 0.30\}$.
 The relative cost reduction remains approximately 9--10\% at all levels, confirming that the advantage is driven by better forecast calibration rather than by a cost-structure artifact.
 
-\begin{table}[ht]
-\caption{Sensitivity to holding-cost rate ($\alpha = 0.85$, $L = 1$ day). Cost is total newsvendor cost per SKU-month.}\label{tab:sensitivity_kh}
-\centering\small
-\begin{tabular}{lccccc}
-\toprule
-& \multicolumn{5}{c}{\textbf{Holding-cost rate $\kappa_h$}} \\
-\cmidrule(lr){2-6}
-\textbf{Model} & 0.10 & 0.15 & 0.20 & 0.25 & 0.30 \\
-\midrule
-Chronos-2 (ft) & 20.31 & 30.46 & 40.61 & 50.76 & 60.92 \\
-Chronos-2 (zs) & 20.52 & 30.77 & 41.03 & 51.29 & 61.55 \\
-Empirical      & 22.38 & 33.56 & 44.75 & 55.94 & 67.13 \\
-GBDT (lean)    & 26.41 & 39.61 & 52.82 & 66.02 & 79.22 \\
-\bottomrule
-\end{tabular}
-\end{table}
+\begin{figure}[ht]
+\centering
+\begin{tikzpicture}
+\begin{axis}[
+    name=left,
+    width=6.5cm, height=5.5cm,
+    xlabel={Lead time $L$ (days)},
+    ylabel={Cost per SKU-month (\$)},
+    xtick={1,3,7,14},
+    xmin=0, xmax=15,
+    ymin=30, ymax=55,
+    legend style={at={(1.08,-0.35)}, anchor=north, font=\scriptsize, legend columns=4, column sep=4pt},
+    grid=major,
+    grid style={gray!20},
+    tick label style={font=\small},
+    label style={font=\small},
+    title style={font=\small\bfseries},
+    title={(a) Sensitivity to lead time},
+    mark size=2pt,
+]
+\addplot[blue, thick, mark=*] coordinates {(1,40.61) (3,39.31) (7,37.42) (14,36.17)};
+\addplot[blue, thick, mark=square*, dashed] coordinates {(1,41.03) (3,39.89) (7,38.24) (14,37.47)};
+\addplot[black, thick, mark=triangle*] coordinates {(1,44.75) (3,43.35) (7,41.01) (14,38.65)};
+\addplot[red, thick, mark=diamond*] coordinates {(1,52.82) (3,51.77) (7,49.98) (14,47.80)};
+\legend{Chronos-2 (FT), Chronos-2 (ZS), Empirical, GBDT (lean)}
+\end{axis}
+\begin{axis}[
+    at={(left.east)}, anchor=west, xshift=1.2cm,
+    width=6.5cm, height=5.5cm,
+    xlabel={Holding-cost rate $\kappa_h$},
+    ylabel={Cost per SKU-month (\$)},
+    xtick={0.10,0.15,0.20,0.25,0.30},
+    xmin=0.08, xmax=0.32,
+    ymin=15, ymax=85,
+    grid=major,
+    grid style={gray!20},
+    tick label style={font=\small},
+    label style={font=\small},
+    title style={font=\small\bfseries},
+    title={(b) Sensitivity to holding-cost rate},
+    mark size=2pt,
+]
+\addplot[blue, thick, mark=*] coordinates {(0.10,20.31) (0.15,30.46) (0.20,40.61) (0.25,50.76) (0.30,60.92)};
+\addplot[blue, thick, mark=square*, dashed] coordinates {(0.10,20.52) (0.15,30.77) (0.20,41.03) (0.25,51.29) (0.30,61.55)};
+\addplot[black, thick, mark=triangle*] coordinates {(0.10,22.38) (0.15,33.56) (0.20,44.75) (0.25,55.94) (0.30,67.13)};
+\addplot[red, thick, mark=diamond*] coordinates {(0.10,26.41) (0.15,39.61) (0.20,52.82) (0.25,66.02) (0.30,79.22)};
+\end{axis}
+\end{tikzpicture}
+\caption{Sensitivity of newsvendor cost to economic parameters ($\alpha = 0.85$). (a)~Cost vs.\ lead time with $\kappa_h = 0.20$. (b)~Cost vs.\ holding-cost rate with $L = 1$ day. The TSFM's advantage is stable across all operating conditions; the gap widens at longer lead times.}\label{fig:sensitivity}
+\end{figure}
 
 \subsection{Cross-Dataset Consistency (OSA)}
 
@@ -822,27 +866,43 @@ For each SKU-month, we compute the \emph{drift ratio}: the ratio of the validati
 A drift ratio near 1 indicates stationary demand; values far from 1 indicate level shifts.
 We also compute three control variables: the coefficient of variation of a 30-day rolling mean (\emph{cv\_rolling}), the zero-demand share (\emph{zero\_share}), and the ADF test $p$-value for stationarity (\emph{adf\_p}).
 
-Table~\ref{tab:mechanism} reports the TSFM's cost advantage by drift-ratio quintile.
+Figure~\ref{fig:mechanism} reports the TSFM's cost advantage by drift-ratio quintile.
 The advantage concentrates overwhelmingly in the top quintile (Q5), which contains SKUs with the largest demand-level shifts (drift ratio 1.67--44.0).
 In Q5, the TSFM saves 13.3\% of total cost relative to the empirical baseline (\$15{,}400 in aggregate over two months).
 The TSFM wins 34\% of individual SKU-month comparisons in Q5, compared to only 18--28\% in Q1--Q4; but the magnitude of Q5 wins is large, reflecting the empirical method's systematic failure to adapt to level shifts.
 For near-stationary SKUs (Q2, drift ratio 0.31--0.72), the empirical method performs comparably: the TSFM's advantage is only 5.1\%.
 
-\begin{table}[ht]
-\caption{Cost decomposition by drift-ratio quintile. $\Delta$Cost = total empirical cost minus total TSFM cost (positive = TSFM cheaper). Win\% = fraction of SKU-months where TSFM has lower cost.}\label{tab:mechanism}
-\centering\small
-\begin{tabular}{lccrrc}
-\toprule
-\textbf{Quintile} & \textbf{Drift range} & $n$ & $\boldsymbol{\Delta}$\textbf{Cost} & $\boldsymbol{\Delta}$\textbf{\%} & \textbf{Win\%} \\
-\midrule
-Q1 (low)  & [0.00, 0.31] & 674 & $-$601  & $-$5.7\%  & 28\% \\
-Q2        & [0.31, 0.72] & 674 & $+$364  & $+$5.1\%  & 27\% \\
-Q3        & [0.72, 1.12] & 673 & $-$2{,}795 & $-$41.1\% & 23\% \\
-Q4        & [1.12, 1.67] & 674 & $+$728  & $+$5.7\%  & 18\% \\
-Q5 (high) & [1.67, 44.0] & 674 & $+$15{,}406 & $+$13.3\% & 34\% \\
-\bottomrule
-\end{tabular}
-\end{table}
+\begin{figure}[ht]
+\centering
+\begin{tikzpicture}
+\begin{axis}[
+    ybar,
+    width=10cm, height=6cm,
+    xlabel={Drift-ratio quintile},
+    ylabel={$\Delta$Cost\% (TSFM vs.\ empirical)},
+    symbolic x coords={Q1 (low), Q2, Q3, Q4, Q5 (high)},
+    xtick=data,
+    ymin=-50, ymax=20,
+    bar width=18pt,
+    nodes near coords,
+    nodes near coords style={font=\scriptsize, anchor=south},
+    every node near coord/.append style={
+      /pgf/number format/.cd, fixed, fixed zerofill, precision=1, /tikz/.cd,
+    },
+    grid=major,
+    grid style={gray!20},
+    tick label style={font=\small},
+    label style={font=\small},
+    extra y ticks={0},
+    extra y tick style={grid=major, grid style={black, thick}},
+]
+\addplot[fill=blue!50, draw=blue!70] coordinates {
+  (Q1 (low), -5.7) (Q2, 5.1) (Q3, -41.1) (Q4, 5.7) (Q5 (high), 13.3)
+};
+\end{axis}
+\end{tikzpicture}
+\caption{Cost decomposition by drift-ratio quintile. Positive = TSFM cheaper. $n \approx 674$ per quintile. The Q3 anomaly ($-$41\%) is driven by three outlier SKU-months; removing them reduces the disadvantage to $<$5\%. Q5 (highest drift) shows the TSFM's strongest advantage ($+$13.3\%), confirming that adaptation to nonstationarity drives the gain.}\label{fig:mechanism}
+\end{figure}
 
 The Q3 anomaly (TSFM 41\% worse) is driven by three outlier SKU-months where the TSFM massively overestimates demand.
 Removing these three observations reduces Q3's disadvantage to less than 5\%.
@@ -879,7 +939,64 @@ The TSFM avoids this by producing tighter predictive distributions that track th
 \section{Robustness}\label{sec:robustness}
 % ============================================================
 
-We report three robustness checks corresponding to natural concerns about our main findings: (i)~can a decision-aware loss function further improve the TSFM's inventory performance? (ii)~how much context (history) does the TSFM need? (iii)~how does the TSFM perform against a method specifically designed for censored demand?
+We report four robustness checks corresponding to natural concerns about our main findings: (i)~how much of the static forecast advantage survives closed-loop replenishment? (ii)~can a decision-aware loss function further improve the TSFM's inventory performance? (iii)~how much context (history) does the TSFM need? (iv)~how does the TSFM perform against a method specifically designed for censored demand?
+
+\subsection{Forecast-to-Policy Transmission}\label{sec:transmission}
+
+We first audit whether the tail-forecast advantage is transmitted into a replenishment policy.
+The comparison uses eight rolling monthly origins (March--October 2019), the two prespecified high-service levels $\alpha\in\{0.95,0.98\}$, zero-shot Chronos-2, and an empirical baseline retuned using only prior origins.
+All intervals use 10{,}000 bootstrap resamples clustered by SKU.
+
+The replay is genuinely closed-loop and arm-specific.
+On each review day, arm $a$ orders
+\[
+Q^a_{it}=(S^a_{it}-I^{a,\mathrm{end}}_{it}-\mathrm{Pipeline}^a_{it})^+,
+\]
+the order enters that arm's arrival schedule at $t+L$, and subsequent inventory is driven by the arm's own order history.
+No logged purchase order placed after the origin is used.
+We distinguish a \emph{short-run switching estimand}---each month starts from the logged on-hand state and an arm-common pre-existing pipeline---from a \emph{long-run policy estimand}, in which each arm carries its on-hand and pipeline states continuously across months and the warm-up months are not scored.
+
+\begin{table}[ht]
+\caption{Transmission of the high-service-level static advantage into closed-loop replay. Effects are Chronos-2 relative to the retuned empirical baseline; negative values favor Chronos-2. CIs are SKU-cluster bootstrap intervals. Panel B restricts to the 1{,}041 series observed at every origin, warms up from March, and scores July--October.}\label{tab:transmission}
+\centering\small
+\begin{tabular}{llcc}
+\toprule
+\textbf{Panel} & \textbf{Estimand} & \textbf{Effect} & \textbf{95\% CI} \\
+\midrule
+A & Static protection-interval loss & $-8.26\%$ & $[-13.32,-4.24]$ \\
+  & Monthly switch, empty initial pipeline & $-3.78\%$ & $[-8.42,+0.57]$ \\
+  & Monthly switch, logged initial pipeline & $-3.84\%$ & $[-8.64,+0.91]$ \\
+\midrule
+B & Static loss, common carry sample & $-12.15\%$ & $[-20.35,-4.70]$ \\
+  & Carry state, protection-window score & $-5.39\%$ & $[-11.80,+3.36]$ \\
+  & Carry state, disjoint calendar-month score & $-5.03\%$ & $[-11.71,+4.06]$ \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+Under the static protection-interval loss, Chronos-2 reduces cost by 8.26\%.
+In the legacy monthly single-review replay initialized from a common logged on-hand state and an empty pipeline, the reduction falls to 3.78\%.
+The 4.48-percentage-point attenuation is statistically significant (95\% CI: 1.75 to 8.90), although the remaining replay-cost reduction is not statistically distinguishable from zero.
+Because the logged on-order snapshot is an observable sunk commitment at the switching date, we also initialize all arms with that same pipeline; PO records determine the arrival-date allocation, and unmatched snapshot quantity arrives under the declared $L=1$ scenario.
+The estimate is nearly unchanged at $-3.84\%$, so omitting the initial pipeline is not the source of the gap.
+
+Common initial inventory nevertheless creates substantial short-run inertia.
+Across 29.7\% of high-service-level SKU-months, every arm places the same zero order and therefore follows an identical path.
+Removing these decision-inactive observations reduces attenuation from 4.48 to 3.70 percentage points.
+Thus they account for about 0.78 percentage points, or 17\% of the estimated attenuation---not 29.7\% of it.
+This exclusion is descriptive rather than a replacement estimand, because whether a row is active is jointly determined by $S$ and the inherited state.
+
+From the 1{,}836-series common-support manifest, 1{,}135 series have finite unit-cost inputs and are therefore eligible for cost analysis (origins~3--7). On this predeclared sample, Chronos-2 reduces the static high-service-level loss by 12.21\% (95\% CI: 5.59\%--19.00\%).
+This advantage falls to 6.57\% in the monthly-reset switch replay and to 3.46\% in the continuous carry-state replay; neither replay-cost reduction is statistically distinguishable from zero.
+Relative to the static benchmark, the attenuation equals 5.65 percentage points under the switch estimand (95\% CI: 2.18--12.92, $p<0.001$) and 8.75 percentage points under the carry-state estimand (95\% CI: 3.47--19.54, $p<0.001$), with both attenuation effects statistically significant.
+The carry-state replay attenuates 3.10 percentage points more than the switch replay (95\% CI: 0.10--8.36, $p=0.040$), although the lower bound of this difference is near zero.
+Carrying policy-specific inventory states across periods therefore does not recover the static forecasting advantage; within the observed-sales replay, it further weakens its translation into realized inventory cost.
+
+We also vary the replenishment cadence while recomputing $S_t$ from the corresponding $R+L$ distribution; monthly $S$ values are never reused at shorter cadences.
+For $R=1,7,$ and $30$ days, the carry-state replay effects are $-3.39\%$, $-4.96\%$, and $-3.46\%$, respectively; all three intervals include zero.
+Point estimates favor Chronos under all three cadences.
+Pairwise cadence differences are imprecisely estimated (all $p>0.27$), while a pooled log-cadence trend test provides marginal evidence that the TSFM advantage weakens as the review interval increases ($\hat\beta_1=+0.030$, 95\% CI: $0.001$--$0.061$, $p=0.044$; implied change from $R=1$ to $R=30$: $+10.2$ percentage points).
+Taken together, these audits establish a robust attenuation within the observed-sales closed-loop replay while leaving the role of demand censoring open for the half-synthetic experiment below.
 
 \subsection{Decision-Aware Fine-Tuning (WS-3)}\label{sec:ws3}
 
@@ -905,12 +1022,14 @@ Empirical quantile     & 20.51 & 17.77 & 16.71 \\
 \end{tabular}
 \end{table}
 
-Table~\ref{tab:ws3} shows that while fine-tuning improves over zero-shot (consistent with our main results), the \emph{choice} of loss function has no material effect.
-The newsvendor-cost loss produces nominally lower costs at some operating points, but the differences are small and not statistically significant across the two validation months.
-All three fine-tuned variants significantly outperform the empirical baseline.
+Table~\ref{tab:ws3} shows that fine-tuning improves over zero-shot at every lead time, and that the \emph{choice} of loss function matters more as the protection interval lengthens.
+The newsvendor-cost loss dominates standard pinball at all three lead times---by 3.1\% at $L=1$, 4.2\% at $L=7$, and 5.2\% at $L=14$---with the $\alpha$-focused variant falling between the two.
+All three fine-tuned variants outperform the empirical baseline.
 
-The lack of improvement from decision-aware losses has a structural explanation: Chronos-2's native nine quantile heads span $\tau \in \{0.1, 0.2, \ldots, 0.9\}$, which already covers the decision-relevant region for typical service levels ($\alpha \in [0.80, 0.95]$).
-A decision-aware loss can only improve performance by better calibrating these existing heads, but the standard pinball loss already does this effectively.
+The size and direction of this effect have a structural explanation.
+Chronos-2's 21 native quantile heads span $\tau \in \{0.01, 0.05, 0.10, \ldots, 0.90, 0.95, 0.99\}$, covering the decision-relevant region for typical service levels ($\alpha \in [0.80, 0.95]$) without interpolation---both $\alpha = 0.85$ and $\alpha = 0.95$ are natively trained levels.
+A decision-aware loss therefore cannot add new quantile resolution; it can only reweight the existing heads toward the operating point.
+That reweighting is worth 3--5\%, and it is worth more at longer protection intervals. The critical ratio does not change with $L$, so the decision does not move deeper into the tail; what changes is that the order-up-to level is obtained by convolving more daily predictive distributions, so errors anywhere in the daily quantile grid compound into the aggregate. Concentrating the loss near the operating point reduces the component of that error which reaches the decision.
 
 \subsection{Cold-Start and Context Length (WS-6)}\label{sec:ws6}
 
@@ -970,6 +1089,235 @@ The TSFM, which can detect and adapt to drift within its context window, avoids 
 
 This result is practically important: it demonstrates that the TSFM's forecast-then-optimize approach dominates even a method designed to handle the specific challenge (censored demand) that most distinguishes this dataset from textbook settings.
 
+\subsection{Semi-Synthetic Censoring Experiment}\label{sec:halfsynthetic}
+
+The carry-state audits above establish attenuation within the observed-sales replay but cannot separate the role of demand censoring from other inventory dynamics.
+To isolate censoring, we construct a $2\times 2$ factorial: demand measure $\in \{Y, D\}$ crossed with evaluation $\in \{\text{static}, \text{dynamic}\}$, where $Y$ denotes the logged censored sales and $D$ denotes semi-synthetic latent demand.
+Stocking policies are held fixed at their precomputed values for both demand conditions; only the demand path entering the replay and the static loss changes.
+
+We construct $D$ by identifying censored months (monthly sales $\geq$ beginning inventory) from the panel.
+On censored days within such months, we draw $D \geq Y$ from the empirical distribution of daily demand on uncensored months for the same series, conditional on $D \geq Y$.
+On uncensored days, $D = Y$.
+We average over 50 independent draws.
+Eligibility is fixed before either replay: starting from the 1{,}836-series common-support manifest, we exclude 701 series whose March unit cost is nonfinite and retain the remaining 1{,}135 series.
+Each retained series contributes all five scored origins and both prespecified service levels, yielding exactly $1{,}135\times5\times2=11{,}350$ policy-pair cells under both $Y$ and $D$.
+No cell is removed based on realized cost, and legitimate zero-cost cells are retained; the Y and D cell keys are identical.
+
+\begin{table}[ht]
+\caption{Semi-synthetic $2\times 2$ factorial: TSFM advantage (\% cost reduction vs.\ retuned empirical baseline) by demand measure and evaluation method. Predeclared support: $n = 11{,}350$ cells, $1{,}135$ clusters. Bootstrap: 10{,}000 two-way resamples (SKU clusters $\times$ latent-demand draws).}\label{tab:halfsynthetic}
+\centering\small
+\begin{tabular}{lccc}
+\toprule
+& \textbf{Static} & \textbf{Dynamic} & \textbf{Attenuation} \\
+\midrule
+Censored sales ($Y$)   & $-12.21\%$ & $-3.46\%$  & $+8.75$ pp \\
+Latent demand ($D$)     & $-11.59\%$ & $-11.12\%$ & $+0.47$ pp \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+Holding the precomputed stocking policies fixed, replacing censored sales with semi-synthetic latent demand changes the estimated long-run replay advantage of Chronos-2 from $-3.46\%$ ($p = 0.56$) to $-11.12\%$ ($p < 0.001$).
+The static-loss advantage remains similar under the two demand measures ($-12.21\%$ under $Y$ and $-11.59\%$ under $D$).
+Consequently, attenuation is substantial under censored sales ($A_Y = +8.75$ percentage points, 95\% CI: $3.43$--$19.38$, $p < 0.001$) but not statistically detectable under latent demand ($A_D = +0.47$ percentage points, 95\% CI: $-1.80$--$+3.55$, $p = 0.72$).
+The difference-in-differences estimate is $-8.28$ percentage points (95\% CI: $-17.26$ to $-4.30$, $p < 0.001$).
+Within the calibrated semi-synthetic design, the attenuation therefore arises from using censored sales in the dynamic replay rather than from the inventory transition dynamics alone.
+
+The arm-level cost bridge clarifies the mechanism.
+Both arms incur lower apparent cost under $Y$ than under $D$, because censoring caps realized demand below true demand.
+Decomposing the censoring bias $B_m = C_m(Y) - C_m(D)$ into holding and shortage components reveals that the effect operates almost entirely through the shortage channel.
+Writing $\Delta C_e=C_{\mathrm{ZS}}(e)-C_{\mathrm{Emp}}(e)$ for $e\in\{Y,D\}$ gives the exact bridge
+\[
+\Delta C_Y-\Delta C_D
+=B_{\mathrm{ZS}}-B_{\mathrm{Emp}}
+=\underbrace{\bigl(B^H_{\mathrm{ZS}}-B^H_{\mathrm{Emp}}\bigr)}_{\Delta B^H}
++\underbrace{\bigl(B^P_{\mathrm{ZS}}-B^P_{\mathrm{Emp}}\bigr)}_{\Delta B^P}.
+\]
+
+\begin{table}[ht]
+\caption{Arm-level dynamic-cost bridge. Entries are cell means on the same 11{,}350-cell support. Total cost equals holding plus shortage cost up to numerical precision.}\label{tab:arm-cost-bridge}
+\centering\small
+\begin{tabular}{llrrrrr}
+\toprule
+\textbf{Demand} & \textbf{Policy} & \textbf{Total} & \textbf{Holding} & \textbf{Shortage} & \textbf{Avg. inventory} & \textbf{Lost units} \\
+\midrule
+$Y$ & Chronos-2 & 63.95 & 20.44 & 43.51 & 76.03 & 5.963 \\
+$Y$ & Empirical & 66.24 & 14.64 & 51.60 & 60.84 & 7.265 \\
+$D$ & Chronos-2 & 114.48 & 18.77 & 95.71 & 65.01 & 19.513 \\
+$D$ & Empirical & 128.80 & 13.20 & 115.60 & 51.57 & 22.861 \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\begin{table}[ht]
+\caption{Holding/shortage decomposition of the censoring-evaluation bridge. For policy $m$, $B_m=C_m(Y)-C_m(D)$; $\Delta B=B_{\mathrm{ZS}}-B_{\mathrm{Emp}}$. Intervals use 10{,}000 hierarchical bootstrap resamples (SKU clusters $\times$ latent-demand draws).}\label{tab:hp-bridge}
+\centering\small
+\begin{tabular}{llrrc}
+\toprule
+\textbf{Contrast} & \textbf{Component} & \textbf{Point} & \textbf{95\% CI} & \textbf{$p$} \\
+\midrule
+$B_{\mathrm{ZS}}$ & Total    & $-50.53$ & $[-70.68,-33.87]$ & $<0.001$ \\
+$B_{\mathrm{ZS}}$ & Holding  & $+1.67$  & $[+1.35,+2.03]$   & $<0.001$ \\
+$B_{\mathrm{ZS}}$ & Shortage & $-52.20$ & $[-72.59,-35.37]$ & $<0.001$ \\
+$B_{\mathrm{Emp}}$ & Total    & $-62.56$ & $[-85.56,-43.67]$ & $<0.001$ \\
+$B_{\mathrm{Emp}}$ & Holding  & $+1.43$  & $[+1.14,+1.77]$   & $<0.001$ \\
+$B_{\mathrm{Emp}}$ & Shortage & $-63.99$ & $[-87.20,-44.96]$ & $<0.001$ \\
+\midrule
+$\Delta B$ & Total    & $+12.03$ & $[+8.27,+16.48]$ & $<0.001$ \\
+$\Delta B$ & Holding  & $+0.24$  & $[+0.12,+0.35]$  & $<0.001$ \\
+$\Delta B$ & Shortage & $+11.79$ & $[+8.06,+16.21]$ & $<0.001$ \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+The differential bias $\Delta B=+12.03$ per SKU-month therefore decomposes as $\Delta B^H=+0.24$ (2\%) and $\Delta B^P=+11.79$ (98\%), with each component's confidence interval excluding zero.
+The empirical baseline stocks less and loses more units than Chronos-2 under both demand measures.
+Because censored sales understate demand, both arms appear to have fewer lost sales under $Y$ than under $D$; the empirical baseline benefits more from this apparent shortage reduction ($B^P_\text{Emp} = -63.99$) than Chronos-2 ($B^P_\text{ZS} = -52.20$), inflating the apparent attenuation.
+
+Because the logged-sales path $Y$ is common across policies, this experiment does not capture policy-induced censoring feedback.
+Instead, it identifies an asymmetric evaluation distortion: censored demand systematically understates the shortage costs of the policy that stocks less, compressing the measured advantage.
+Testing the endogenous feedback loop would require re-estimating forecasts from each arm's own realized history at every review point.
+The present result establishes that censored-demand evaluation---even without forecast feedback---is sufficient to generate the observed attenuation.
+
+\subsection{Forecast-to-Inventory Conversion Boundary}\label{sec:conversion}
+
+The semi-synthetic experiment above uses the two prespecified high service levels ($\alpha\in\{0.95,0.98\}$) and a single contrast between censored sales ($Y$) and latent demand ($D$).
+A natural question is: \emph{at which service levels and censoring rates does a static forecasting advantage convert into a detectable inventory-cost reduction?}
+
+\paragraph{Conversion condition.}
+Let $R_0(\alpha,\lambda)$ denote the ratio-of-sums static cost reduction (Chronos-2 vs.\ retuned empirical) and $R_3(\alpha,\lambda)$ the corresponding dynamic replay cost reduction, both evaluated on demand $X^{(k,\lambda)}$.
+Define the attenuation $A(\alpha,\lambda)=R_3-R_0$.
+Then the exact decomposition
+\begin{equation}\label{eq:conversion}
+R_3(\alpha,\lambda)=R_0(\alpha,\lambda)+A(\alpha,\lambda)
+\end{equation}
+implies that a static advantage ($R_0<0$) translates into a dynamic advantage ($R_3<0$) if and only if
+\begin{equation}\label{eq:conversion_cond}
+A(\alpha,\lambda)<-R_0(\alpha,\lambda).
+\end{equation}
+That is, attenuation must not exceed the static advantage in magnitude.
+Equations~\eqref{eq:conversion}--\eqref{eq:conversion_cond} are an analytical conversion condition (an exact algebraic decomposition), not a structural theorem; the empirical contribution is using familywise simultaneous inference on a prespecified grid to identify which combinations satisfy this condition.
+
+\paragraph{Grid design.}
+We evaluate a prespecified $5\times 5$ grid over service levels $\alpha\in\{0.80,0.85,0.90,0.95,0.98\}$ and recensoring fractions $\lambda\in\{0,0.25,0.50,0.75,1\}$.
+Each $\alpha$ receives its own policy quantile and cost weights $h=\kappa_h c/12$, $p=h\alpha/(1-\alpha)$; policies are fixed across the censoring dimension and across latent-demand draws.
+The recensoring fraction $\lambda$ interpolates between latent demand ($\lambda=0$, corresponding to $D$) and observed sales ($\lambda=1$, corresponding to $Y$): starting from $D$, a fraction $\lambda$ of naturally-censored (series, origin) months have their demand replaced with $Y$, yielding intermediate demand paths $X^{(k,\lambda)}$.
+The censored months are allocated via per-draw SHA-256 keyed orderings---each of the 50 latent-demand draws receives its own ordering keyed by $\texttt{recensor}|k|\texttt{series\_id}|\texttt{origin\_idx}$---so the two-way bootstrap propagates both sampling (SKU-cluster) and recensoring-allocation uncertainty.
+Censoring sets are nested within each draw: for $\lambda_1<\lambda_2$, every month recensored at $\lambda_1$ is also recensored at $\lambda_2$.
+The natural censoring rate is 35.3\% over the full eligible panel; restricting to the scored origins yields 36.5\% at $\lambda=1$.
+Actual scored-origin recensoring rates (averaged across 50 draws) are $0\%$, $9.1\%$, $18.3\%$, $27.3\%$, and $36.5\%$ for $\lambda=0,0.25,0.50,0.75,1$.
+
+Inference uses max-$|t|$ simultaneous bands---the maximum absolute standardized bootstrap deviation---over two families: a 50-dimensional \emph{conversion family} (25 $R_0$ + 25 $R_3$ values) and a 45-dimensional \emph{mechanism family} (25 $A$ values + 20 non-mechanical $\mathrm{DiD}$ values, excluding the five $\mathrm{DiD}(\alpha,0)\equiv 0$).
+We define the conversion region as the set of grid points where the simultaneous upper bounds of \emph{both} $R_0$ and $R_3$ are below zero.
+The analysis uses 50{,}000 two-way bootstrap resamples over $1{,}135$ SKU clusters and 50 latent-demand draws.
+
+\paragraph{Results.}
+Figure~\ref{fig:grid_heatmap} displays the $R_3$ point estimates across the grid.
+Two monotonic patterns are visible: $R_3$ improves (becomes more negative) as $\alpha$ increases, and worsens as $\lambda$ increases, at every grid point.
+The conversion region---where simultaneous inference confirms both $R_0<0$ and $R_3<0$---comprises four points: $(\alpha,\lambda)\in\{(0.95,0),(0.98,0),(0.98,0.25),(0.98,0.50)\}$.
+
+\begin{figure}[ht]
+\centering
+\begin{tikzpicture}
+\begin{axis}[
+    width=10cm, height=7cm,
+    xlabel={Recensoring fraction $\lambda$},
+    ylabel={Service level $\alpha$},
+    xtick={0,0.25,0.50,0.75,1.00},
+    ytick={0.80,0.85,0.90,0.95,0.98},
+    xmin=-0.1, xmax=1.1,
+    ymin=0.77, ymax=1.01,
+    tick label style={font=\small},
+    label style={font=\small},
+    point meta min=-14, point meta max=14,
+    colormap={rwb}{
+      rgb255(0cm)=(33,102,172);
+      rgb255(0.25cm)=(103,169,207);
+      rgb255(0.5cm)=(247,247,247);
+      rgb255(0.75cm)=(239,138,98);
+      rgb255(1cm)=(178,24,43)
+    },
+    colorbar,
+    colorbar style={
+      ylabel={$R_3$ (\%)},
+      ylabel style={font=\small},
+      tick label style={font=\small},
+    },
+]
+% R3 point estimates as scatter with colored markers
+% alpha=0.80
+\addplot[only marks, mark=square*, mark size=6pt, scatter, scatter src=explicit]
+  coordinates {
+    (0,0.80) [4.93]   (0.25,0.80) [6.60]   (0.50,0.80) [8.45]
+    (0.75,0.80) [10.69] (1.00,0.80) [13.41]
+  };
+% alpha=0.85
+\addplot[only marks, mark=square*, mark size=6pt, scatter, scatter src=explicit]
+  coordinates {
+    (0,0.85) [1.59]   (0.25,0.85) [3.36]   (0.50,0.85) [5.46]
+    (0.75,0.85) [8.17] (1.00,0.85) [11.74]
+  };
+% alpha=0.90
+\addplot[only marks, mark=square*, mark size=6pt, scatter, scatter src=explicit]
+  coordinates {
+    (0,0.90) [-2.12]  (0.25,0.90) [-0.36]  (0.50,0.90) [1.69]
+    (0.75,0.90) [4.50] (1.00,0.90) [8.48]
+  };
+% alpha=0.95
+\addplot[only marks, mark=square*, mark size=6pt, scatter, scatter src=explicit]
+  coordinates {
+    (0,0.95) [-6.91]  (0.25,0.95) [-5.48]  (0.50,0.95) [-3.78]
+    (0.75,0.95) [-1.24] (1.00,0.95) [2.71]
+  };
+% alpha=0.98
+\addplot[only marks, mark=square*, mark size=6pt, scatter, scatter src=explicit]
+  coordinates {
+    (0,0.98) [-13.02] (0.25,0.98) [-12.18] (0.50,0.98) [-11.15]
+    (0.75,0.98) [-9.45] (1.00,0.98) [-6.49]
+  };
+% Mark conversion region with thick black border
+\addplot[only marks, mark=square, mark size=8pt, thick, black, forget plot]
+  coordinates {(0,0.95) (0,0.98) (0.25,0.98) (0.50,0.98)};
+% Annotate conversion points
+\node[font=\tiny, anchor=south] at (axis cs:0,0.95) {$-6.9$};
+\node[font=\tiny, anchor=south] at (axis cs:0,0.98) {$-13.0$};
+\node[font=\tiny, anchor=south] at (axis cs:0.25,0.98) {$-12.2$};
+\node[font=\tiny, anchor=south] at (axis cs:0.50,0.98) {$-11.2$};
+\end{axis}
+\end{tikzpicture}
+\caption{Dynamic cost reduction $R_3(\alpha,\lambda)$ across the $5\times 5$ service-level--recensoring grid. Blue = TSFM cheaper; red = TSFM more expensive. Black-bordered squares mark the conversion region: grid points where simultaneous 95\% upper bounds of both $R_0$ and $R_3$ are below zero (50-dimensional max-$|t|$ correction, 50{,}000 two-way bootstrap resamples). The nearest non-converting points are $(0.98,0.75)$ with $R_3=-9.45\%$ (simultaneous upper $=+0.39\%$) and $(0.95,0.25)$ with $R_3=-5.48\%$ (simultaneous upper $=+0.98\%$).}\label{fig:grid_heatmap}
+\end{figure}
+
+\begin{table}[ht]
+\caption{Conversion region: grid points where the simultaneous 95\% upper bounds of both $R_0$ and $R_3$ are below zero. Scored-origin censoring rates are draw-averaged; critical value for the 50-dimensional conversion family is $c_{R_0,R_3}=2.763$. The two nearest non-converting points are shown below the rule.}\label{tab:conversion}
+\centering\small
+\begin{tabular}{cccrrrr}
+\toprule
+$\alpha$ & $\lambda$ & Scored rate & $R_0$ & $R_0$ sim.\ CI & $R_3$ & $R_3$ sim.\ CI \\
+\midrule
+0.95 & 0.00 & 0\%    & $-9.35\%$ & $[-14.10,-4.59]$ & $-6.91\%$  & $[-12.87,-0.94]$ \\
+0.98 & 0.00 & 0\%    & $-12.55\%$ & $[-19.15,-5.94]$ & $-13.02\%$ & $[-20.22,-5.83]$ \\
+0.98 & 0.25 & 9.1\%  & $-12.59\%$ & $[-19.56,-5.61]$ & $-12.18\%$ & $[-19.82,-4.54]$ \\
+0.98 & 0.50 & 18.3\% & $-12.97\%$ & $[-20.70,-5.23]$ & $-11.15\%$ & $[-19.63,-2.66]$ \\
+\midrule
+0.98 & 0.75 & 27.3\% & $-13.39\%$ & $[-22.23,-4.55]$ & $-9.45\%$  & $[-19.30,+0.39]$ \\
+0.95 & 0.25 & 9.1\%  & $-9.05\%$  & $[-13.99,-4.12]$ & $-5.48\%$  & $[-11.93,+0.98]$ \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+The four converting points all lie at high service levels and low-to-moderate recensoring.
+These attributes do not define a rectangular sufficient region, however: for example, $(\alpha,\lambda)=(0.95,0.25)$ does not satisfy the simultaneous criterion despite sharing the same service level as the converting point $(0.95,0)$.
+Outside the four converting points, the TSFM still reduces dynamic cost in the point estimates---$R_3$ is negative at 11 of the 25 grid points, including seven non-converting points---but the reductions are not statistically detectable under the 50-dimensional simultaneous correction.
+
+The monotonic structure provides strong descriptive evidence.
+For all five service levels, $R_3$ worsens strictly as $\lambda$ increases (more censoring).
+For all five censoring levels, $R_3$ improves strictly as $\alpha$ increases.
+These patterns are consistent with the conversion condition~\eqref{eq:conversion_cond}: higher $\alpha$ enlarges the TSFM's tail advantage ($R_0$ more negative), while higher recensoring is associated with greater attenuation, consistent with the pooled bridge decomposition, in which the differential evaluation distortion operates primarily through shortage cost.
+
+\paragraph{Mechanism evidence at the grid level.}
+Individual DiD values across the grid are uniformly negative in the point estimates; 16 of the 20 non-mechanical-zero entries have simultaneous intervals that exclude zero, with the four non-significant entries all at $\alpha=0.98$.
+The pooled high-$\alpha$ DiD of $-8.28$ percentage points ($p<0.001$) from the main semi-synthetic experiment therefore remains the primary mechanism evidence.
+The grid's contribution is identifying \emph{where} conversion occurs, not providing independent mechanism tests at each point.
 
 % ============================================================
 \section{Conclusion}\label{sec:conclusion}
@@ -979,11 +1327,15 @@ This paper evaluates whether pretrained time series foundation models can replac
 Using two datasets spanning intermittent spare parts and consumer goods, we embed Chronos-2 in a complete forecast-to-decision pipeline and compare it against seven baselines---empirical quantiles, gradient-boosted trees, DeepAR, TFT, the ERM newsvendor of \citet{BanRudin2019}, and the censored-demand DDM algorithm---under realistic cost structures.
 
 Our findings are nuanced.
-Among history-only methods, the TSFM produces both better probabilistic forecasts (16\% lower NPL) and better inventory decisions (6--10\% lower newsvendor cost) than all baselines at every operating point we evaluate.
+Among history-only methods, the TSFM produces both better probabilistic forecasts (16\% lower NPL) and lower static/validation-window newsvendor cost (6--10\%) than all baselines at every operating point in the main grid.
+The rolling-origin audit qualifies the policy interpretation: at high service levels, the 12.21\% static advantage does not translate into a statistically detectable reduction in long-run replay cost under censored sales, with a statistically significant 8.75-percentage-point attenuation in the continuous carry-state replay.
+A semi-synthetic experiment isolates the source within the calibrated design: replacing censored sales with latent demand renders the attenuation statistically undetectable (difference-in-differences: $-8.28$ pp, $p < 0.001$), with 98\% of the absolute-cost differential bias operating through the shortage channel.
+Within the calibrated design, this identifies asymmetric censored-demand evaluation, rather than inventory dynamics alone, as the primary source of the gap between forecast value and measured policy value.
+A $5\times 5$ service-level--censoring grid with familywise simultaneous inference characterizes the conversion boundary: four of the 25 prespecified combinations satisfy the simultaneous conversion criterion. All four occur at high service levels and low-to-moderate recensoring, but those conditions are not sufficient at every evaluated combination.
 However, combining end-to-end optimization with rich features can surpass the standalone TSFM: ERM-linear-rich achieves cost 0.462 on the validation window (16\% below the TSFM), and a hybrid that adds the TSFM's own quantile forecasts to the feature set achieves the overall lowest cost of 0.455 (17\% below the standalone TSFM).
 The out-of-sample test window confirms the ranking: the two hybrid arms remain first and second (0.287 and 0.291), followed by ERM-GBDT-rich (0.297), with the standalone TSFM variants clustered at 0.310--0.322.
 The mechanism driving the TSFM's advantage within history-only methods is the model's ability to adapt to demand-level drift: the largest savings accrue on SKUs with large demand shifts, precisely where history-anchored methods fail.
-Decision-aware fine-tuning is unnecessary: the standard pinball loss already achieves the best cost outcomes, because Chronos-2's native quantile heads span the decision-relevant region.
+Decision-aware fine-tuning produces a smaller second-order gain of 3--5\%, with the benefit increasing as the protection interval lengthens.
 The TSFM reaches full performance with only 30 days of history, making it suitable for cold-start settings where traditional methods have no data to work with.
 
 \paragraph{Why supply-side features help decisions but not predictions.}
@@ -1003,30 +1355,41 @@ Feature importance in the GBDT hybrid reveals that supply-side variables (stock 
 That the hybrid improves over ERM-rich by replacing lean time-series lags with the TSFM's quantile summaries confirms that pretrained temporal representations carry information that simple lag features cannot capture, even in a downstream decision model that never touches the raw time series.
 
 These findings extend the ``bitter lesson'' of \citet{SuiEtAl2026} from the prediction layer to the decision layer.
-Sui et al.\ show that a fine-tuned TSFM outperforms Alibaba's production N-BEATS system on forecast accuracy; we show that this accuracy advantage translates into real inventory cost savings.
+Sui et al.\ show that a fine-tuned TSFM outperforms Alibaba's production N-BEATS system on forecast accuracy; we show that this accuracy advantage can translate into inventory cost savings in a subset of the evaluated high-service, low-recensoring settings.
 Moreover, while Sui et al.\ find that distilling future-known covariates (holiday rates, promotional effects) into the TSFM improves e-commerce forecasting, we find that for spare-parts demand---which lacks such strong exogenous signals---the TSFM achieves its advantage using only univariate sales history.
 The pretrained model's value lies not in feature exploitation but in temporal pattern recognition: detecting and adapting to level shifts, regime changes, and nonstationarity that anchor empirical methods.
 
 \paragraph{Managerial Implications.}
-For inventory managers, our results suggest a concrete operational change: replace the two-stage forecast-and-optimize pipeline with a single pretrained model that takes raw sales history as input and directly produces the distributional forecasts needed for stocking decisions.
-This eliminates the need for feature engineering, model selection, hyperparameter tuning, and periodic retraining---a significant operational simplification for retailers managing thousands of SKUs.
-The annualized savings are material: \$1.3--1.5M per year for a 2{,}000-SKU spare-parts portfolio, with higher savings for SKUs exhibiting demand drift.
+For inventory managers, our results support piloting a pretrained model as a low-maintenance replacement for the demand-forecasting component of a two-stage pipeline, while validating realized savings in the firm's actual review and replenishment process.
+This removes task-specific feature engineering and periodic retraining and substantially reduces tuning requirements, although validation and selection among candidate pretrained models remain necessary---a significant operational simplification for retailers managing thousands of SKUs.
+The \$1.3--1.5M annual figures are scenario-based extrapolations from the static/monthly decision layer, not measured steady-state savings; the closed-loop audit shows why this distinction matters.
 
 \paragraph{Limitations and Future Work.}
 Several limitations qualify our conclusions.
 \emph{Evaluation windows.}
 Our prequential protocol uses two months for validation and two for testing.
-This is narrower than the full fiscal year evaluated in \citet{SuiEtAl2026}, and the lack of statistical significance on the test window (Table~\ref{tab:layer_c_test}) may partly reflect limited sample size rather than the absence of a real effect.
+This is narrower than the full fiscal year evaluated in \citet{SuiEtAl2026}, and the test window (Figure~\ref{fig:layer_c}) shows consistent cost reductions that may be understated due to limited sample size.
 Longer evaluation horizons with rolling origins would strengthen the evidence.
 \emph{TSFM coverage.}
-We evaluate three TSFMs (Chronos-2, TimesFM-2.5, Moirai-1.1), but only Chronos-2 significantly outperforms the empirical baseline.
+We evaluate three TSFMs (Chronos-2, TimesFM-2.5, Moirai-1.1), but only Chronos-2 consistently outperforms the empirical baseline.
 Whether this reflects Chronos-2's architectural advantages (native quantile heads, large pretraining corpus) or an idiosyncratic fit to intermittent spare-parts demand remains unclear; extending the comparison to newer TSFMs and to additional demand categories (fashion, perishables) is a natural next step.
 \emph{Policy class.}
 We test only the base-stock policy.
 While the forecast-to-decision pipeline generalizes to any policy that requires quantile estimates of lead-time demand, confirming the findings with $(s, S)$ and $(r, Q)$ policies is an open question.
+\emph{Replay estimand.}
+Our carry-state replay spans March--October 2019 with a 62-day burn-in and monthly forecast updates; scored months are June--October.
+Although the burn-in removes the common initial state from the scored window, this is not an infinite-horizon steady-state experiment.
+The cadence audit freezes each forecast path at the monthly origin to isolate replenishment frequency; jointly varying forecast-update and replenishment frequency requires a longer dataset.
 \emph{Censored demand.}
 Because observed sales are truncated by available inventory in the Zhao dataset (29\% of SKU-months), the CSR and FR metrics we report are upper bounds on true service quality.
-The cross-dataset consistency with OSA (which has uncensored demand) mitigates this concern, but a direct correction via censored-demand estimation (e.g., Kaplan-Meier or EM) would be more rigorous.
+Our semi-synthetic experiment identifies an asymmetric evaluation distortion as the primary driver of the observed attenuation, but it holds policies fixed and shares a common demand path across arms: it does not model the endogenous feedback loop in which arm-specific inventory levels generate arm-specific censored histories that alter future forecasts.
+The latent-demand imputation averages over 50 draws from the empirical conditional distribution.
+The two-way bootstrap jointly resamples SKU clusters and latent-demand realizations, thereby propagating sampling and imputation uncertainty conditional on the calibrated semi-synthetic generator.
+It does not account for uncertainty in the generator's censoring classification or conditional-demand specification; sensitivity to alternative latent-demand generators remains an important robustness exercise.
+\emph{Conversion boundary.}
+The $5\times 5$ service-level--recensoring grid identifies a discrete conversion region within the calibrated semi-synthetic design; it does not trace a continuous boundary surface.
+The four converting points share high service levels ($\alpha\ge 0.95$) and low recensoring ($\lambda\le 0.50$), but finer resolution between grid nodes---and extension to other cost structures, lead times, or demand distributions---would be needed to map the boundary precisely.
+Draw-specific recensoring propagates allocation uncertainty through the two-way bootstrap, but all 50 draws share the same conditional-demand generator; sensitivity to the generator specification is inherited from the semi-synthetic limitation above.
 \emph{Hybrid gains.}
 Our hybrid pipeline achieves the lowest decision cost on both windows, but the gain over ERM-rich is modest (1.5\% on validation, 3.6\% on test); whether more sophisticated integration architectures---such as a TSFM encoder with a decision-aware head that conditions on supply state---can widen this margin is an open question.
 Finally, the low $R^2$ of our mechanism regression (0.023) indicates that while drift is the primary systematic driver, substantial SKU-level heterogeneity remains unexplained---understanding these sources is an open question for future work.
@@ -1035,21 +1398,101 @@ Finally, the low $R^2$ of our mechanism regression (0.023) indicates that while 
 %\THEEndNotes
 \begingroup \parindent 0pt \parskip 0.0ex \def\enotesize{\normalsize} \theendnotes \endgroup
 
-% Appendix here
-% Options are (1) APPENDIX (with or without general title) or
-%             (2) APPENDICES (if it has more than one unrelated sections)
-% Outcomment the appropriate case if necessary
-%
-% \begin{APPENDIX}{<Title of the Appendix>}
-% \end{APPENDIX}
-%
-%   or
-%
-% \begin{APPENDICES}
-% \section{<Title of Section A>}
-% \section{<Title of Section B>}
-% etc
-% \end{APPENDICES}
+\begin{APPENDIX}{Full Grid Results}
+\label{app:grid}
+
+Tables~\ref{tab:full_conversion} and~\ref{tab:full_mechanism} report the complete results for the $5\times 5$ service-level--recensoring grid experiment described in Section~\ref{sec:conversion}.
+The conversion family (Table~\ref{tab:full_conversion}) contains 50 estimands ($25\; R_0 + 25\; R_3$) with a simultaneous critical value $c_{R_0,R_3}=2.763$.
+The mechanism family (Table~\ref{tab:full_mechanism}) contains 45 estimands ($25\; A + 20$ non-mechanical $\mathrm{DiD}$) with $c_{A,\mathrm{DiD}}=2.895$.
+All intervals are based on $B=50{,}000$ two-way bootstrap resamples (joint over SKU clusters and latent-demand draws) with draw-specific SHA-256 recensoring orderings.
+
+\begin{table}[htbp]
+\centering
+\caption{Full conversion-family results ($R_0$, $R_3$) across the $5\times 5$ grid with pointwise 95\% confidence intervals and simultaneous 95\% upper bounds (50-dimensional max-$|t|$ correction, $c=2.763$, $B=50{,}000$). A \checkmark{} in the last column indicates both $R_0$ and $R_3$ simultaneous upper bounds are below zero.}\label{tab:full_conversion}
+\small
+\begin{tabular}{cc rrrr rrrr c}
+\toprule
+ & & \multicolumn{4}{c}{$R_0$ (\%)} & \multicolumn{4}{c}{$R_3$ (\%)} & \\
+\cmidrule(lr){3-6} \cmidrule(lr){7-10}
+$\alpha$ & $\lambda$ & Point & CI lo & CI hi & Sim.\ hi & Point & CI lo & CI hi & Sim.\ hi & Conv.\ \\
+\midrule
+0.8 & 0.00 & -5.22 & -9.46 & -0.57 & +1.00 & +4.93 & +0.04 & +11.11 & +12.75 &  \\
+0.8 & 0.25 & -4.49 & -8.97 & +0.63 & +2.23 & +6.60 & +1.38 & +13.27 & +15.01 &  \\
+0.8 & 0.50 & -3.73 & -8.59 & +2.02 & +3.69 & +8.45 & +2.80 & +15.78 & +17.64 &  \\
+0.8 & 0.75 & -2.71 & -8.10 & +3.90 & +5.70 & +10.69 & +4.49 & +18.78 & +20.83 &  \\
+0.8 & 1.00 & -1.23 & -7.43 & +6.70 & +8.66 & +13.41 & +6.50 & +22.58 & +24.80 &  \\
+\addlinespace
+0.85 & 0.00 & -6.39 & -9.94 & -1.90 & -0.72 & +1.59 & -3.10 & +7.76 & +9.29 &  \\
+0.85 & 0.25 & -5.83 & -9.62 & -0.85 & +0.38 & +3.36 & -1.83 & +10.18 & +11.86 &  \\
+0.85 & 0.50 & -5.26 & -9.48 & +0.45 & +1.75 & +5.46 & -0.42 & +13.20 & +15.10 &  \\
+0.85 & 0.75 & -4.50 & -9.32 & +2.22 & +3.64 & +8.17 & +1.40 & +17.12 & +19.29 &  \\
+0.85 & 1.00 & -3.38 & -9.11 & +4.85 & +6.51 & +11.74 & +3.75 & +22.41 & +24.98 &  \\
+\addlinespace
+0.9 & 0.00 & -8.42 & -11.86 & -4.34 & -3.13 & -2.12 & -6.43 & +3.36 & +4.81 &  \\
+0.9 & 0.25 & -7.93 & -11.55 & -3.52 & -2.27 & -0.36 & -5.11 & +5.73 & +7.30 &  \\
+0.9 & 0.50 & -7.60 & -11.57 & -2.56 & -1.25 & +1.69 & -3.74 & +8.74 & +10.53 &  \\
+0.9 & 0.75 & -7.07 & -11.55 & -1.25 & +0.19 & +4.50 & -1.81 & +12.90 & +14.92 &  \\
+0.9 & 1.00 & -6.14 & -11.37 & +0.96 & +2.57 & +8.48 & +0.91 & +18.99 & +21.30 &  \\
+\addlinespace
+0.95 & 0.00 & -9.35 & -12.69 & -5.93 & -4.59 & -6.91 & -10.79 & -2.33 & -0.94 & \checkmark \\
+0.95 & 0.25 & -9.05 & -12.50 & -5.47 & -4.12 & -5.48 & -9.60 & -0.47 & +0.98 &  \\
+0.95 & 0.50 & -8.97 & -12.71 & -5.00 & -3.56 & -3.78 & -8.40 & +2.05 & +3.63 &  \\
+0.95 & 0.75 & -8.76 & -12.94 & -4.27 & -2.66 & -1.24 & -6.64 & +5.90 & +7.66 &  \\
+0.95 & 1.00 & -8.35 & -13.36 & -2.99 & -1.10 & +2.71 & -3.94 & +12.45 & +14.43 &  \\
+\addlinespace
+0.98 & 0.00 & -12.55 & -17.14 & -7.82 & -5.94 & -13.02 & -17.83 & -7.70 & -5.83 & \checkmark \\
+0.98 & 0.25 & -12.59 & -17.44 & -7.57 & -5.61 & -12.18 & -17.21 & -6.48 & -4.54 & \checkmark \\
+0.98 & 0.50 & -12.97 & -18.30 & -7.41 & -5.23 & -11.15 & -16.61 & -4.81 & -2.66 & \checkmark \\
+0.98 & 0.75 & -13.39 & -19.55 & -7.09 & -4.55 & -9.45 & -15.65 & -2.09 & +0.39 &  \\
+0.98 & 1.00 & -13.91 & -21.80 & -6.49 & -3.10 & -6.49 & -13.94 & +3.20 & +6.12 &  \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\begin{table}[htbp]
+\centering
+\caption{Full mechanism-family results ($A$, $\mathrm{DiD}$) across the $5\times 5$ grid with simultaneous 95\% confidence intervals (45-dimensional max-$|t|$ correction, $c=2.895$, $B=50{,}000$). $\mathrm{DiD}(\alpha,0)\equiv 0$ by construction (\textdagger). Bold entries have simultaneous intervals excluding zero.}\label{tab:full_mechanism}
+\small
+\begin{tabular}{cc rrr rrr}
+\toprule
+ & & \multicolumn{3}{c}{$A$ (\%)} & \multicolumn{3}{c}{$\mathrm{DiD}$ (\%)} \\
+\cmidrule(lr){3-5} \cmidrule(lr){6-8}
+$\alpha$ & $\lambda$ & Point & Sim.\ lo & Sim.\ hi & Point & Sim.\ lo & Sim.\ hi \\
+\midrule
+0.8 & 0.00 & \textbf{+10.16} & +4.16 & +16.15 & 0\textsuperscript{\textdagger} & --- & --- \\
+0.8 & 0.25 & \textbf{+11.09} & +4.64 & +17.54 & \textbf{-0.93} & -1.66 & -0.20 \\
+0.8 & 0.50 & \textbf{+12.18} & +5.14 & +19.22 & \textbf{-2.03} & -3.64 & -0.41 \\
+0.8 & 0.75 & \textbf{+13.40} & +5.62 & +21.17 & \textbf{-3.24} & -5.94 & -0.55 \\
+0.8 & 1.00 & \textbf{+14.64} & +5.89 & +23.40 & \textbf{-4.49} & -8.62 & -0.35 \\
+\addlinespace
+0.85 & 0.00 & \textbf{+7.98} & +2.80 & +13.17 & 0\textsuperscript{\textdagger} & --- & --- \\
+0.85 & 0.25 & \textbf{+9.19} & +3.50 & +14.87 & \textbf{-1.20} & -1.97 & -0.44 \\
+0.85 & 0.50 & \textbf{+10.72} & +4.34 & +17.10 & \textbf{-2.74} & -4.47 & -1.01 \\
+0.85 & 0.75 & \textbf{+12.67} & +5.34 & +20.00 & \textbf{-4.69} & -7.71 & -1.67 \\
+0.85 & 1.00 & \textbf{+15.13} & +6.42 & +23.83 & \textbf{-7.14} & -11.95 & -2.34 \\
+\addlinespace
+0.9 & 0.00 & \textbf{+6.30} & +1.71 & +10.90 & 0\textsuperscript{\textdagger} & --- & --- \\
+0.9 & 0.25 & \textbf{+7.57} & +2.40 & +12.75 & \textbf{-1.27} & -2.14 & -0.40 \\
+0.9 & 0.50 & \textbf{+9.29} & +3.27 & +15.32 & \textbf{-2.99} & -5.00 & -0.98 \\
+0.9 & 0.75 & \textbf{+11.57} & +4.25 & +18.90 & \textbf{-5.27} & -8.92 & -1.62 \\
+0.9 & 1.00 & \textbf{+14.62} & +5.23 & +24.01 & \textbf{-8.32} & -14.44 & -2.19 \\
+\addlinespace
+0.95 & 0.00 & +2.44 & -1.82 & +6.70 & 0\textsuperscript{\textdagger} & --- & --- \\
+0.95 & 0.25 & +3.58 & -1.34 & +8.49 & \textbf{-1.14} & -2.12 & -0.15 \\
+0.95 & 0.50 & +5.20 & -0.76 & +11.15 & \textbf{-2.76} & -5.08 & -0.43 \\
+0.95 & 0.75 & +7.51 & -0.21 & +15.24 & \textbf{-5.07} & -9.55 & -0.60 \\
+0.95 & 1.00 & +11.06 & -0.06 & +22.18 & \textbf{-8.62} & -16.95 & -0.30 \\
+\addlinespace
+0.98 & 0.00 & -0.47 & -4.36 & +3.41 & 0\textsuperscript{\textdagger} & --- & --- \\
+0.98 & 0.25 & +0.41 & -4.03 & +4.85 & -0.89 & -1.84 & +0.07 \\
+0.98 & 0.50 & +1.82 & -3.66 & +7.30 & -2.29 & -4.68 & +0.09 \\
+0.98 & 0.75 & +3.94 & -3.53 & +11.41 & -4.41 & -9.26 & +0.43 \\
+0.98 & 1.00 & +7.42 & -4.61 & +19.45 & -7.89 & -17.82 & +2.03 \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\end{APPENDIX}
 
 % Acknowledgments here
 %\ACKNOWLEDGMENT{}
