@@ -17,3 +17,22 @@ Reference/
 *.out
 *.synctex.gz
 paper/main.pdf
+paper/main.fdb_latexmk
+paper/main.fls
+paper/main.ent
+
+# Large data artifacts (regenerable from scripts)
+*.parquet
+*.npz
+artifacts/zhao_audit/audit_long*.csv
+artifacts/zhao_audit/cadence_carry.csv
+artifacts/zhao_audit/cadence_switch.csv
+artifacts/zhao_audit/carry_*.csv
+artifacts/zhao_audit/switch_*.csv
+artifacts/zhao_continuous/continuous_long*.csv
+artifacts/zhao_rolling_origins/rolling_origins_long.csv
+artifacts/zhao_halfsynthetic/halfsynthetic_long.csv
+artifacts/zhao_daily/deepprob_log.txt
+
+# INFORMS template (not our content)
+paper/INFORMS-MSOM-Template-6-10-2024*
