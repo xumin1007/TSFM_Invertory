@@ -1,0 +1,60 @@
+{
+  "step_id": "zhao_end_to_end",
+  "dataset": "zhao",
+  "status": "PASS",
+  "assertions": [
+    {
+      "name": "面板主键唯一",
+      "passed": true,
+      "detail": ""
+    },
+    {
+      "name": "订单到货不早于下单",
+      "passed": true,
+      "detail": ""
+    },
+    {
+      "name": "预测非负",
+      "passed": true,
+      "detail": ""
+    },
+    {
+      "name": "q50 <= q85",
+      "passed": true,
+      "detail": ""
+    },
+    {
+      "name": "预测有限",
+      "passed": true,
+      "detail": ""
+    },
+    {
+      "name": "每 origin×model 主键完整",
+      "passed": true,
+      "detail": ""
+    }
+  ],
+  "n_rows": 407008,
+  "n_excluded": 0,
+  "n_fallback": 0,
+  "blocked_gates": [],
+  "seed": 42,
+  "notes": {
+    "w_edges": [
+      8.42,
+      18.92
+    ],
+    "w_default_share": 0.4778,
+    "unk_rate_test": {
+      "category": 0.0,
+      "subcategory": 0.0,
+      "unit": 0.0,
+      "brand_ID": 0.0192,
+      "operation_mode": 0.0
+    },
+    "wall_clock_sec": 145.0,
+    "calib_level_share": {
+      "L1": 1.0
+    }
+  }
+}

@@ -1,0 +1,37 @@
+{
+  "step_id": "zhao_finetune",
+  "dataset": "zhao",
+  "status": "PASS",
+  "assertions": [
+    {
+      "name": "微调输入不越过内部验证目标段",
+      "passed": true,
+      "detail": ""
+    },
+    {
+      "name": "内部验证不越过验证窗",
+      "passed": true,
+      "detail": ""
+    }
+  ],
+  "n_rows": 152847,
+  "n_excluded": 0,
+  "n_fallback": 0,
+  "blocked_gates": [],
+  "seed": 42,
+  "notes": {
+    "train_cutoff_overridden": "2019-05-29",
+    "ft_horizon": 7,
+    "finetune_max_ts": "2019-05-29",
+    "inner_val_max_ts": "2019-06-30",
+    "n_train_series": 1853,
+    "paired_rows": 16983,
+    "ft_gain_chronos2-ft-full-short": [
+      -0.00146,
+      -0.00389,
+      0.00077,
+      false
+    ],
+    "wall_clock_sec": 499.1
+  }
+}

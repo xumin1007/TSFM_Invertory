@@ -1,0 +1,168 @@
+{
+  "tables": {
+    "inventory": {
+      "rows": 247620,
+      "columns": [
+        "date",
+        "sku_ID",
+        "category",
+        "subcategory",
+        "unit",
+        "beginning_inventory",
+        "on_order_inventory",
+        "stock_value",
+        "month"
+      ],
+      "n_sku": 28626,
+      "missing_rate": {
+        "date": 0.0,
+        "sku_ID": 0.0,
+        "category": 0.0,
+        "subcategory": 0.0,
+        "unit": 0.0,
+        "beginning_inventory": 0.0,
+        "on_order_inventory": 0.0,
+        "stock_value": 0.0,
+        "month": 0.0
+      },
+      "month_range": [
+        "2019-01-01",
+        "2019-10-01"
+      ]
+    },
+    "orders": {
+      "rows": 174155,
+      "columns": [
+        "sku_ID",
+        "category",
+        "subcategory",
+        "unit",
+        "order_date",
+        "arrival_date",
+        "quantity",
+        "unit_cost",
+        "normal_lead_time",
+        "order_month",
+        "arrival_month",
+        "promised_eta",
+        "promised_eta_month",
+        "eta_error_days"
+      ],
+      "n_sku": 18523,
+      "missing_rate": {
+        "sku_ID": 0.0,
+        "category": 0.0,
+        "subcategory": 0.0,
+        "unit": 0.0,
+        "order_date": 0.0,
+        "arrival_date": 0.0,
+        "quantity": 0.0,
+        "unit_cost": 0.0,
+        "normal_lead_time": 0.0,
+        "order_month": 0.0,
+        "arrival_month": 0.0,
+        "promised_eta": 0.0,
+        "promised_eta_month": 0.0,
+        "eta_error_days": 0.0
+      }
+    },
+    "sales": {
+      "rows": 1439480,
+      "columns": [
+        "date",
+        "sku_ID",
+        "category",
+        "subcategory",
+        "unit",
+        "brand_ID",
+        "quantity",
+        "original_unit_price",
+        "sales_revenue",
+        "_sheet",
+        "month"
+      ],
+      "n_sku": 21468,
+      "missing_rate": {
+        "date": 0.0,
+        "sku_ID": 0.0,
+        "category": 0.0,
+        "subcategory": 0.0,
+        "unit": 0.0,
+        "brand_ID": 0.0,
+        "quantity": 4e-06,
+        "original_unit_price": 1e-06,
+        "sales_revenue": 0.000364,
+        "_sheet": 0.0,
+        "month": 0.0
+      },
+      "month_range": [
+        "2019-01-01",
+        "2019-10-01"
+      ]
+    },
+    "attrs": {
+      "rows": 28757,
+      "columns": [
+        "sku_ID",
+        "category",
+        "subcategory",
+        "unit",
+        "brand_ID",
+        "introduction_year",
+        "stop_year",
+        "operation_mode",
+        "introduction_year_nonnumeric",
+        "stop_year_nonnumeric"
+      ],
+      "n_sku": 28757,
+      "missing_rate": {
+        "sku_ID": 0.0,
+        "category": 0.0,
+        "subcategory": 0.0,
+        "unit": 0.0,
+        "brand_ID": 0.000174,
+        "introduction_year": 0.000104,
+        "stop_year": 0.777515,
+        "operation_mode": 0.0,
+        "introduction_year_nonnumeric": 0.0,
+        "stop_year_nonnumeric": 0.0
+      }
+    },
+    "shelf": {
+      "rows": 272761,
+      "columns": [
+        "date",
+        "sku_ID",
+        "category",
+        "subcategory",
+        "facing_number",
+        "shelf_capacity",
+        "month"
+      ],
+      "n_sku": 28705,
+      "missing_rate": {
+        "date": 0.0,
+        "sku_ID": 0.0,
+        "category": 0.0,
+        "subcategory": 0.0,
+        "facing_number": 0.0916,
+        "shelf_capacity": 0.092499,
+        "month": 0.0
+      },
+      "month_range": [
+        "2018-12-01",
+        "2019-10-01"
+      ]
+    }
+  },
+  "inventory_pk_duplicates": 0,
+  "sales_negative_qty": 523,
+  "orders": {
+    "n": 174155,
+    "eta_on_time": 0.5885,
+    "eta_early": 0.1084,
+    "eta_late": 0.3031,
+    "normal_lead_time_median": 1.0,
+    "arrival_after_order_violations": 0
+  }
+}

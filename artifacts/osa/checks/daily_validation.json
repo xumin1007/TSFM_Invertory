@@ -1,0 +1,35 @@
+{
+  "step_id": "osa_daily_validation",
+  "dataset": "osa",
+  "status": "PASS",
+  "assertions": [
+    {
+      "name": "q50 <= q85",
+      "passed": true,
+      "detail": ""
+    },
+    {
+      "name": "预测非负有限",
+      "passed": true,
+      "detail": ""
+    }
+  ],
+  "n_rows": 18,
+  "n_excluded": 0,
+  "n_fallback": 0,
+  "blocked_gates": [],
+  "seed": 42,
+  "notes": {
+    "panel_audit": {
+      "n_rows": 40590,
+      "n_series": 100,
+      "gap_decision": "EXCLUDE_NOT_ZERO_FILL",
+      "density_median": 0.4836,
+      "zero_share": 0.4845,
+      "mean_obs_per_series": 405.9
+    },
+    "wall_clock_sec": 7.5,
+    "role": "MECHANISM_DEMONSTRATOR_ONLY",
+    "n_complete_weeks_validation": 6
+  }
+}

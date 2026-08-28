@@ -1,0 +1,74 @@
+{
+  "step_id": "ws3_decision_ft",
+  "dataset": "zhao",
+  "status": "PASS",
+  "assertions": [
+    {
+      "name": "微调输入不越过内部验证目标段",
+      "passed": true,
+      "detail": ""
+    },
+    {
+      "name": "内部验证不越过验证窗",
+      "passed": true,
+      "detail": ""
+    }
+  ],
+  "n_rows": 16880,
+  "n_excluded": 0,
+  "n_fallback": 0,
+  "blocked_gates": [],
+  "seed": 42,
+  "notes": {
+    "n_train_series": 475,
+    "npl_chronos2-zs": 0.26316,
+    "npl_chronos2-ft-pinball": 0.2557,
+    "npl_chronos2-ft-newsvendor": 0.24934,
+    "npl_chronos2-ft-focused": 0.25611,
+    "npl_delta_chronos2-ft-pinball": [
+      -0.00746,
+      -0.01319,
+      -0.00248,
+      true
+    ],
+    "npl_delta_chronos2-ft-newsvendor": [
+      -0.01382,
+      -0.02663,
+      -0.00516,
+      true
+    ],
+    "npl_delta_chronos2-ft-focused": [
+      -0.00706,
+      -0.01123,
+      -0.00347,
+      true
+    ],
+    "decision_cost_chronos2-zs": 54.1871,
+    "decision_csr_chronos2-zs": 0.9184,
+    "decision_cost_chronos2-ft-pinball": 54.5253,
+    "decision_csr_chronos2-ft-pinball": 0.9041,
+    "decision_cost_chronos2-ft-newsvendor": 54.1461,
+    "decision_csr_chronos2-ft-newsvendor": 0.9062,
+    "decision_cost_chronos2-ft-focused": 54.34,
+    "decision_csr_chronos2-ft-focused": 0.9122,
+    "cost_delta_chronos2-ft-pinball": [
+      0.3457,
+      -0.7278,
+      1.6842,
+      false
+    ],
+    "cost_delta_chronos2-ft-newsvendor": [
+      -0.0076,
+      -1.2381,
+      1.6916,
+      false
+    ],
+    "cost_delta_chronos2-ft-focused": [
+      0.1658,
+      -0.8087,
+      1.4066,
+      false
+    ],
+    "wall_clock_sec": 1375.7
+  }
+}

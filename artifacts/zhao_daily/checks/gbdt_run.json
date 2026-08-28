@@ -1,0 +1,28 @@
+{
+  "step_id": "zhao_daily_gbdt",
+  "dataset": "zhao",
+  "status": "PASS",
+  "assertions": [
+    {
+      "name": "训练窗不越界",
+      "passed": true,
+      "detail": ""
+    }
+  ],
+  "n_rows": 84915,
+  "n_excluded": 0,
+  "n_fallback": 0,
+  "blocked_gates": [],
+  "seed": 42,
+  "notes": {
+    "unk_rate_validation": {
+      "category": 0.0,
+      "subcategory": 0.0,
+      "unit": 0.0,
+      "brand_ID": 0.0089,
+      "operation_mode": 0.0
+    },
+    "paired_rows": 16983,
+    "wall_clock_sec": 109.1
+  }
+}

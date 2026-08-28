@@ -1,0 +1,31 @@
+{
+  "step_id": "zhao_daily_first_run",
+  "dataset": "zhao",
+  "status": "PASS",
+  "assertions": [
+    {
+      "name": "q50 <= q85",
+      "passed": true,
+      "detail": ""
+    },
+    {
+      "name": "预测非负有限",
+      "passed": true,
+      "detail": ""
+    }
+  ],
+  "n_rows": 50949,
+  "n_excluded": 0,
+  "n_fallback": 0,
+  "blocked_gates": [],
+  "seed": 42,
+  "notes": {
+    "panel_audit": {
+      "n_rows": 4411210,
+      "n_sku_kept": 17226,
+      "kept_share": 0.8024,
+      "zero_share_after_fill": 0.6823
+    },
+    "wall_clock_sec": 58.6
+  }
+}

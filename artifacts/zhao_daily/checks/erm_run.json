@@ -1,0 +1,21 @@
+{
+  "step_id": "zhao_erm",
+  "dataset": "zhao",
+  "status": "PASS",
+  "assertions": [],
+  "n_rows": 67932,
+  "n_excluded": 0,
+  "n_fallback": 0,
+  "blocked_gates": [],
+  "seed": 42,
+  "notes": {
+    "wall_clock_sec": 21.0,
+    "alpha": 0.85,
+    "arms": [
+      "erm-linear-lean",
+      "erm-linear-rich",
+      "erm-gbdt-lean",
+      "erm-gbdt-rich"
+    ]
+  }
+}

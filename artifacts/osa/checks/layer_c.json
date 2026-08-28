@@ -1,0 +1,36 @@
+{
+  "step_id": "osa_layer_c",
+  "dataset": "osa",
+  "status": "PASS",
+  "assertions": [
+    {
+      "name": "§7.2.5 需求路径跨策略一致",
+      "passed": true,
+      "detail": ""
+    },
+    {
+      "name": "守恒断言全部通过",
+      "passed": true,
+      "detail": ""
+    }
+  ],
+  "n_rows": 81,
+  "n_excluded": 0,
+  "n_fallback": 0,
+  "blocked_gates": [],
+  "seed": 42,
+  "notes": {
+    "panel_audit": {
+      "n_rows": 40590,
+      "n_series": 100,
+      "density_median": 0.4836
+    },
+    "replay_n_series": 17,
+    "demand_zero_share": 0.5525,
+    "initial_inv_median": 0.0,
+    "n_scenarios": 81,
+    "wall_clock_sec": 5.0,
+    "role": "MECHANISM_DEMONSTRATOR_ONLY",
+    "eta_scenario_status": "DECLARED_ASSUMPTION_NOT_DATA"
+  }
+}

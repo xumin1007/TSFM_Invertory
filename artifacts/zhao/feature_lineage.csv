@@ -1,0 +1,25 @@
+feature,source_table,availability_rule,transformation,max_source_month
+beginning_inventory,inventory,月初快照，t 时点已知,raw,t
+on_order_inventory,inventory,月初快照（首选在订量）,raw,t
+stock_value,inventory,月初快照,raw,t
+facing_number,shelf,月初陈列,raw,t
+shelf_capacity,shelf,月初陈列,raw,t
+sales_lag1,sales,仅 t-1 及更早,lag,t-1
+sales_roll3,sales,仅 t-1 及更早,rolling_mean_3,t-1
+sales_roll6,sales,仅 t-1 及更早,rolling_mean_6,t-1
+sales_roll6_std,sales,仅 t-1 及更早,rolling_std_6,t-1
+months_observed,inventory,t 之前出现在月初快照的月数,count,t-1
+stop_year_obs,attrs,stop_year < year(origin) 才可观察,censor_at_origin,t-1
+is_discontinued,attrs,截至 origin 是否已停产,censor_at_origin,t-1
+years_since_stop,attrs,origin 年 - stop_year，仅可观察者,censor_at_origin,t-1
+years_since_intro,attrs,origin 年 - introduction_year,censor_at_origin,t-1
+recv_1m,orders,arrival_date < t,sum,t-1
+recv_3m,orders,arrival_date < t,sum,t-1
+recv_6m,orders,arrival_date < t,sum,t-1
+months_since_last_receipt,orders,arrival_date < t,gap,t-1
+open_po_due_this_month,orders,承诺 ETA 落在 t 月,sum,t-1
+open_po_due_next_month,orders,承诺 ETA 落在 t+1 月,sum,t-1
+open_po_overdue,orders,承诺 ETA 早于 t,sum,t-1
+eta_err_p50,orders,仅 arrival_date < t 的已完成订单,median,t-1
+eta_err_p85,orders,仅 arrival_date < t 的已完成订单,q85,t-1
+unit_cost_hist,orders,order_date < t,median,t-1

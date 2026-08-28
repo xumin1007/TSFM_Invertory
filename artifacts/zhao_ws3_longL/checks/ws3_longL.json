@@ -1,0 +1,122 @@
+{
+  "step_id": "ws3_longL",
+  "dataset": "zhao",
+  "status": "PASS",
+  "assertions": [],
+  "n_rows": 30,
+  "n_excluded": 0,
+  "n_fallback": 0,
+  "blocked_gates": [],
+  "seed": 42,
+  "notes": {
+    "L1_chronos2-ft-focused_delta": [
+      -0.4779,
+      -1.3215,
+      0.175,
+      false
+    ],
+    "L1_chronos2-ft-newsvendor_delta": [
+      -0.0377,
+      -1.1281,
+      1.1743,
+      false
+    ],
+    "L1_chronos2-ft-pinball_delta": [
+      -0.2432,
+      -1.0922,
+      0.4342,
+      false
+    ],
+    "L1_emp-daily_delta": [
+      3.8892,
+      1.7544,
+      6.0609,
+      true
+    ],
+    "L7_chronos2-ft-focused_delta": [
+      -0.798,
+      -1.6582,
+      -0.1285,
+      true
+    ],
+    "L7_chronos2-ft-newsvendor_delta": [
+      -0.5567,
+      -1.7968,
+      0.76,
+      false
+    ],
+    "L7_chronos2-ft-pinball_delta": [
+      -0.7016,
+      -1.5872,
+      -0.0002,
+      true
+    ],
+    "L7_emp-daily_delta": [
+      2.8206,
+      0.8364,
+      4.8595,
+      true
+    ],
+    "L14_chronos2-ft-focused_delta": [
+      -1.3249,
+      -2.3053,
+      -0.535,
+      true
+    ],
+    "L14_chronos2-ft-newsvendor_delta": [
+      -1.3385,
+      -2.685,
+      0.0577,
+      false
+    ],
+    "L14_chronos2-ft-pinball_delta": [
+      -1.4203,
+      -2.3733,
+      -0.6624,
+      true
+    ],
+    "L14_emp-daily_delta": [
+      1.2175,
+      -0.5844,
+      3.1029,
+      false
+    ],
+    "L1_chronos2-ft-newsvendor_vs_pinball": [
+      0.2055,
+      -0.6068,
+      1.5616,
+      false
+    ],
+    "L1_chronos2-ft-focused_vs_pinball": [
+      -0.2348,
+      -0.4335,
+      -0.0612,
+      true
+    ],
+    "L7_chronos2-ft-newsvendor_vs_pinball": [
+      0.1449,
+      -0.668,
+      1.4877,
+      false
+    ],
+    "L7_chronos2-ft-focused_vs_pinball": [
+      -0.0965,
+      -0.2653,
+      0.058,
+      false
+    ],
+    "L14_chronos2-ft-newsvendor_vs_pinball": [
+      0.0819,
+      -0.8131,
+      1.5241,
+      false
+    ],
+    "L14_chronos2-ft-focused_vs_pinball": [
+      0.0954,
+      -0.0726,
+      0.2544,
+      false
+    ],
+    "wall_clock_sec": 177.4
+  }
+}

@@ -1,0 +1,18 @@
+{
+  "step_id": "zhao_deepprob",
+  "dataset": "zhao",
+  "status": "PASS",
+  "assertions": [],
+  "n_rows": 33966,
+  "n_excluded": 0,
+  "n_fallback": 0,
+  "blocked_gates": [],
+  "seed": 42,
+  "notes": {
+    "wall_clock_sec": 110.7,
+    "models": [
+      "deepar",
+      "tft"
+    ]
+  }
+}

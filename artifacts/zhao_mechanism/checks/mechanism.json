@@ -1,0 +1,31 @@
+{
+  "step_id": "mechanism",
+  "dataset": "zhao",
+  "status": "PASS",
+  "assertions": [],
+  "n_rows": 3369,
+  "n_excluded": 0,
+  "n_fallback": 0,
+  "blocked_gates": [],
+  "seed": 42,
+  "notes": {
+    "rho_drift": -0.0841,
+    "p_drift": 1.0182e-06,
+    "rho_cv": 0.0492,
+    "p_cv": 0.0042623,
+    "rho_zero": 0.1681,
+    "rho_adf": -0.0331,
+    "ols_beta_drift_ratio": -6.9153,
+    "ols_t_drift_ratio": -7.19,
+    "ols_beta_cv_rolling": -0.465,
+    "ols_t_cv_rolling": -0.44,
+    "ols_beta_zero_share": 5.6851,
+    "ols_t_zero_share": 5.36,
+    "ols_beta_adf_p": -4.7354,
+    "ols_t_adf_p": -4.86,
+    "ols_r2": 0.036,
+    "tsfm_win_pct": 26.0,
+    "mean_delta": -3.89,
+    "wall_clock_sec": 23.7
+  }
+}

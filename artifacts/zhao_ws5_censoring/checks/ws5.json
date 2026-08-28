@@ -1,0 +1,36 @@
+{
+  "step_id": "ws5_censoring",
+  "dataset": "zhao",
+  "status": "PASS",
+  "assertions": [],
+  "n_rows": 3988,
+  "n_excluded": 0,
+  "n_fallback": 0,
+  "blocked_gates": [],
+  "seed": 42,
+  "notes": {
+    "censoring_rate": 29.2,
+    "censoring_n": 1164,
+    "censoring_total": 3982,
+    "cost_chronos2-zs": 40.9156,
+    "csr_chronos2-zs": 0.9211,
+    "cost_ddm": 57.4112,
+    "csr_ddm": 0.9749,
+    "cost_emp-daily": 44.7507,
+    "csr_emp-daily": 0.8924,
+    "delta_chronos2-zs_vs_ddm": [
+      -16.4761,
+      -24.8245,
+      -8.0562,
+      true
+    ],
+    "delta_emp-daily_vs_ddm": [
+      -12.5869,
+      -21.0629,
+      -3.7226,
+      true
+    ],
+    "cross_dataset_consistent": true,
+    "wall_clock_sec": 27.5
+  }
+}

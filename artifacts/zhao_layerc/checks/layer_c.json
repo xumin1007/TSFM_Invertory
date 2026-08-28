@@ -1,0 +1,52 @@
+{
+  "step_id": "zhao_layer_c",
+  "dataset": "zhao",
+  "status": "PASS",
+  "assertions": [
+    {
+      "name": "GBDT 训练目标不越过验证窗",
+      "passed": true,
+      "detail": ""
+    },
+    {
+      "name": "§7.2 守恒断言全部通过",
+      "passed": true,
+      "detail": ""
+    },
+    {
+      "name": "§7.2.5 需求路径跨策略一致",
+      "passed": true,
+      "detail": ""
+    }
+  ],
+  "n_rows": 504,
+  "n_excluded": 0,
+  "n_fallback": 0,
+  "blocked_gates": [],
+  "seed": 42,
+  "notes": {
+    "rank_consistency_alpha_0.85": {
+      "spearman_rho": 0.9643,
+      "p_value": 0.0005,
+      "n_arms": 7
+    },
+    "rank_consistency_alpha_0.9": {
+      "spearman_rho": 1.0,
+      "p_value": 0.0,
+      "n_arms": 7
+    },
+    "rank_consistency_alpha_0.95": {
+      "spearman_rho": 1.0,
+      "p_value": 0.0,
+      "n_arms": 7
+    },
+    "rank_consistency_alpha_0.98": {
+      "spearman_rho": 1.0,
+      "p_value": 0.0,
+      "n_arms": 7
+    },
+    "n_monthly_scenarios": 336,
+    "n_crossmonth_scenarios": 168,
+    "wall_clock_sec": 186.0
+  }
+}

@@ -1,0 +1,135 @@
+{
+  "step_id": "zhao_layer_b",
+  "dataset": "zhao",
+  "status": "PASS",
+  "assertions": [
+    {
+      "name": "GBDT 训练目标不越过验证窗",
+      "passed": true,
+      "detail": ""
+    },
+    {
+      "name": "§10 短缺列名合规",
+      "passed": true,
+      "detail": ""
+    },
+    {
+      "name": "§10 服务率名自带上界限定",
+      "passed": true,
+      "detail": ""
+    }
+  ],
+  "n_rows": 355082,
+  "n_excluded": 0,
+  "n_fallback": 0,
+  "blocked_gates": [],
+  "seed": 42,
+  "notes": {
+    "lead_time_exceeds_period_skus": 64,
+    "margin_price_level": {
+      "L0": 0.9746,
+      "L1": 0.016,
+      "L2": 0.0094
+    },
+    "margin_cost_level": {
+      "L0": 0.8022,
+      "L1": 0.1978
+    },
+    "unit_cost_coverage": 0.8634,
+    "lt_exceeds_share": 0.0015,
+    "negative_ip_backorder_rows": 5,
+    "alpha_i_median": 0.9302,
+    "zero_margin_share": 0.0364,
+    "ft_arms": {
+      "chronos2-ft-full": "H=7, cutoff 06-23",
+      "chronos2-ft-full-short": "H=7, cutoff 05-29",
+      "chronos2-ft-full-h32": "H=32, cutoff 05-29"
+    },
+    "ft_finetune_horizons": {
+      "chronos2-ft-full": 7,
+      "chronos2-ft-full-h32": 32,
+      "decision_H": 32
+    },
+    "cost_delta_derived_chronos2-zs": [
+      -3.8981,
+      -6.1681,
+      -1.9768,
+      true
+    ],
+    "cost_delta_derived_chronos2-ft-full": [
+      -4.3759,
+      -6.5212,
+      -2.4417,
+      true
+    ],
+    "cost_delta_derived_chronos2-ft-full-h32": [
+      -3.4804,
+      -5.4543,
+      -1.6654,
+      true
+    ],
+    "cost_delta_derived_chronos2-ft-full-short": [
+      -3.8062,
+      -5.8571,
+      -1.8456,
+      true
+    ],
+    "cost_delta_derived_gbdt-lean": [
+      8.2447,
+      4.8614,
+      12.122,
+      true
+    ],
+    "cost_delta_derived_always-zero": [
+      38.3669,
+      28.8326,
+      49.3898,
+      true
+    ],
+    "cost_delta_margin_chronos2-zs": [
+      -2.8618,
+      -4.6131,
+      -1.2149,
+      true
+    ],
+    "cost_delta_margin_chronos2-ft-full": [
+      -3.2464,
+      -4.8459,
+      -1.7123,
+      true
+    ],
+    "cost_delta_margin_chronos2-ft-full-h32": [
+      -2.3877,
+      -4.0255,
+      -0.789,
+      true
+    ],
+    "cost_delta_margin_chronos2-ft-full-short": [
+      -2.7768,
+      -4.3594,
+      -1.299,
+      true
+    ],
+    "cost_delta_margin_gbdt-lean": [
+      6.9972,
+      4.2073,
+      10.4172,
+      true
+    ],
+    "cost_delta_margin_always-zero": [
+      26.7289,
+      19.6878,
+      35.6899,
+      true
+    ],
+    "feasible_chronos2-ft-full": false,
+    "feasible_chronos2-zs": false,
+    "feasible_chronos2-ft-full-short": false,
+    "feasible_chronos2-ft-full-h32": false,
+    "feasible_emp-daily": false,
+    "feasible_gbdt-lean": false,
+    "feasible_always-zero": false,
+    "infeasible_flag": true,
+    "wall_clock_sec": 98.5
+  }
+}

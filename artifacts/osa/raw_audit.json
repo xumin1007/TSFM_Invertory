@@ -1,0 +1,8 @@
+{
+  "n_rows": 40590,
+  "n_series": 100,
+  "gap_decision": "EXCLUDE_NOT_ZERO_FILL",
+  "density_median": 0.4836,
+  "zero_share": 0.4845,
+  "mean_obs_per_series": 405.9
+}

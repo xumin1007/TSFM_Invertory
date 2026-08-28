@@ -1,0 +1,5 @@
+arm,cost_per_sku_month,delta_per_sku_month,delta_pct,annual_delta,CSR_ub
+chronos2-zs,41.57,-3.9,-8.6,-1339031.0,0.912
+chronos2-ft-full,41.09,-4.38,-9.6,-1503167.0,0.9051
+gbdt-lean,53.71,8.24,18.1,2832153.0,0.8808
+always-zero,83.83,38.37,84.4,13179492.0,0.7134

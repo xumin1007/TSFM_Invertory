@@ -1,0 +1,56 @@
+{
+  "step_id": "ws4_economics",
+  "dataset": "zhao",
+  "status": "PASS",
+  "assertions": [],
+  "n_rows": 94,
+  "n_excluded": 0,
+  "n_fallback": 0,
+  "blocked_gates": [],
+  "seed": 42,
+  "notes": {
+    "rank_kh_0.1": {
+      "chronos2-zs": 2,
+      "chronos2-ft-full": 1,
+      "emp-daily": 3,
+      "gbdt-lean": 4,
+      "always-zero": 5
+    },
+    "rank_kh_0.15": {
+      "chronos2-zs": 2,
+      "chronos2-ft-full": 1,
+      "emp-daily": 3,
+      "gbdt-lean": 4,
+      "always-zero": 5
+    },
+    "rank_kh_0.2": {
+      "chronos2-zs": 2,
+      "chronos2-ft-full": 1,
+      "emp-daily": 3,
+      "gbdt-lean": 4,
+      "always-zero": 5
+    },
+    "rank_kh_0.25": {
+      "chronos2-zs": 2,
+      "chronos2-ft-full": 1,
+      "emp-daily": 3,
+      "gbdt-lean": 4,
+      "always-zero": 5
+    },
+    "rank_kh_0.3": {
+      "chronos2-zs": 2,
+      "chronos2-ft-full": 1,
+      "emp-daily": 3,
+      "gbdt-lean": 4,
+      "always-zero": 5
+    },
+    "annual_saving_alpha_0.9": -616911.0,
+    "annual_saving_alpha_0.95": -1339031.0,
+    "annual_saving_alpha_0.98": -3452379.0,
+    "annual_saving_alpha_0.99": -6563202.0,
+    "annual_saving_alpha_0.995": -12786193.0,
+    "rank_flip_count": 0,
+    "gbdt_flip_count": 0,
+    "wall_clock_sec": 302.2
+  }
+}
