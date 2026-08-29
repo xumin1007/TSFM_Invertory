@@ -157,6 +157,9 @@ def quantile_grid_to_pmf(levels: np.ndarray, values: np.ndarray, vmax: int,
         F(v) ∈ [ max{τ_j : q_j ≤ v},  min{τ_j : q_j > v} )
 
     `cdf_estimator="midpoint"`（默认）取区间中点，`"lower"` 取下端点。
+    `"quantile_linear"` 将修复后的分位函数在相邻分位点之间作分段线性
+    插值，再反演为整数格点上的 CDF；它是论文敏感性分析中的替代重建规则，
+    不改变默认生产路径。
 
     **必须用 midpoint。** 下端点恒定低估 F(v)，在零原子处最严重：真值
     P(0)=0.68 落在 [0.65,0.70) 时下端点少算 0.03，而卷积 30 次后
@@ -175,7 +178,7 @@ def quantile_grid_to_pmf(levels: np.ndarray, values: np.ndarray, vmax: int,
         raise ValueError(f"values 列数 {values.shape[1]} != levels 长度 {levels.size}")
     if np.any(np.diff(levels) <= 0):
         raise ValueError("levels 必须严格升序")
-    if cdf_estimator not in ("midpoint", "lower"):
+    if cdf_estimator not in ("midpoint", "lower", "quantile_linear"):
         raise ValueError(f"未知 cdf_estimator={cdf_estimator!r}")
     if support not in ("integer", "continuous"):
         raise ValueError(f"未知 support={support!r}")
@@ -203,6 +206,32 @@ def quantile_grid_to_pmf(levels: np.ndarray, values: np.ndarray, vmax: int,
 
     if cdf_estimator == "lower":
         cdf = lower
+    elif cdf_estimator == "quantile_linear":
+        # Invert the piecewise-linear quantile function.  For a grid point g,
+        # let (q_lo,tau_lo) be the rightmost supplied quantile at or below g
+        # and (q_hi,tau_hi) the leftmost supplied quantile above g.  Linear
+        # interpolation between those two knots gives F(g).  Repeated
+        # quantiles are handled by tau_lo=max{tau:q_tau<=g}; hence an atom at
+        # q receives the full supplied probability bracket at that value.
+        gt = ~le
+        q_lo = np.where(le, snap(v)[:, :, None], -np.inf).max(axis=1)
+        q_hi = np.where(gt, snap(v)[:, :, None], np.inf).min(axis=1)
+        tau_hi = np.where(
+            gt.any(axis=1),
+            np.where(gt, levels[None, :, None], np.inf).min(axis=1),
+            1.0,
+        )
+        has_lo = np.isfinite(q_lo)
+        has_hi = np.isfinite(q_hi)
+        denom = q_hi - q_lo
+        frac = np.divide(
+            g - q_lo,
+            denom,
+            out=np.zeros_like(q_lo, dtype=float),
+            where=has_lo & has_hi & (denom > 0),
+        )
+        interp = lower + (tau_hi - lower) * np.clip(frac, 0.0, 1.0)
+        cdf = np.where(~has_lo, 0.0, np.where(~has_hi, 1.0, interp))
     else:
         gt = ~le
         upper = np.where(gt.any(axis=1),
