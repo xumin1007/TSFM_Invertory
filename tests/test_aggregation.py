@@ -74,6 +74,32 @@ def test_unknown_estimator_rejected():
         quantile_grid_to_pmf(L21, _atom_grid(0.68), vmax=20, cdf_estimator="upper")
 
 
+def test_quantile_linear_is_normalised_and_monotone():
+    """分位函数线性插值路径必须给出合法 PMF。"""
+    vals = np.array([[0., 0., 1., 2., 5.],
+                     [0., 1., 1., 4., 8.]])
+    levels = np.array([.10, .30, .50, .80, .99])
+    pmf = quantile_grid_to_pmf(
+        levels, vals, vmax=12, cdf_estimator="quantile_linear")
+    assert np.all(pmf >= 0)
+    assert np.allclose(pmf.sum(axis=1), 1.0)
+    assert np.all(np.diff(np.cumsum(pmf, axis=1), axis=1) >= -1e-12)
+
+
+def test_quantile_linear_inverts_linear_quantile_knots():
+    """在无重复结点的简单例子中，CDF 应等于分位函数的线性反演。"""
+    levels = np.array([.20, .60, .90])
+    vals = np.array([[0., 4., 7.]])
+    pmf = quantile_grid_to_pmf(
+        levels, vals, vmax=10, cdf_estimator="quantile_linear")
+    cdf = np.cumsum(pmf[0])
+    # Between q(.20)=0 and q(.60)=4, F(2)=.40.
+    assert np.isclose(cdf[2], .40)
+    # All mass above q(.90)=7 is conservatively capped at q(.90).
+    assert np.isclose(cdf[7], 1.0)
+    assert np.isclose(pmf[8:].sum(), 0.0)
+
+
 # --------------------------------------------------------------------------
 # PMF 重建的基本性质
 # --------------------------------------------------------------------------
