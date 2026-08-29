@@ -1,0 +1,5 @@
+estimator,vmax,is_reference,effect_direction_preserved,effect_ratio_min,effect_ratio_max,min_per_series_loss_difference_correlation
+midpoint,40,False,True,0.861,0.952,0.9526
+midpoint,60,True,True,1.000,1.000,1.0000
+midpoint,100,False,True,0.956,1.088,0.9585
+midpoint,200,False,True,0.999,1.120,0.9382

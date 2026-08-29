@@ -1,0 +1,3 @@
+policy,n_targets,n_binding,binding_rate_pct,target_max,support_min,support_max,p99_support_utilization_pct,max_support_utilization_pct
+chronos2-zs,3369,0,0.0,1915.0,1920,1920,32.39375000000024,99.73958333333334
+emp-daily,3369,0,0.0,1895.0,1920,1920,29.147916666666685,98.69791666666666
