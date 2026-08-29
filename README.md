@@ -68,6 +68,7 @@ src/f2d/                    # Core library
   run_halfsynthetic.py      # Semi-synthetic censoring experiment
   run_grid_censoring_alpha.py  # 5×5 grid experiment (frozen)
   run_continuous_replay.py  # Continuous carry-state replay
+  run_review_robustness.py  # DGP, dependence, PMF, and tail-calibration checks
   audit_*.py                # Audit scripts
 
 artifacts/                  # Experiment outputs
@@ -100,6 +101,28 @@ PYTHONPATH=src python -m f2d.run_grid_censoring_alpha \
 Replace `--device mps` with `--device cuda` on NVIDIA GPUs or `--device cpu` for CPU-only.
 
 See [`FROZEN_MANIFEST.md`](artifacts/zhao_grid/FROZEN_MANIFEST.md) for full reproduction criteria, environment specifications, and acceptance tolerances.
+
+## Reproducing the Review Robustness Analyses
+
+After placing the five Zhao source files in `data/external/Zhao/`, run:
+
+```bash
+PYTHONPATH=src python -m f2d.run_review_robustness \
+  --device mps \
+  --batch-size 256 \
+  --n-draws 50 \
+  --copula-draws 16384 \
+  --b 10000
+```
+
+This command leaves the frozen main and grid artifacts unchanged. It writes
+the latent-demand-generator sensitivity, protection-interval dependence and
+PMF-reconstruction sensitivity, operational tail-calibration diagnostics, and
+run metadata to `artifacts/zhao_review_robustness/`.
+
+See [`FROZEN_MANIFEST.md`](artifacts/zhao_review_robustness/FROZEN_MANIFEST.md)
+for the exact model revision, reference environment, input and output hashes,
+and acceptance criteria for this robustness run.
 
 ## Key Results
 

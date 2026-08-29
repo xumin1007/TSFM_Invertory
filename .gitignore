@@ -1,8 +1,11 @@
 .venv/
+.venv-review/
 .pytest_cache/
 __pycache__/
 *.py[cod]
 outputs/
+output/
+tmp/
 data/
 artifacts/zhao_finetune/
 artifacts/zhao_analysis/
