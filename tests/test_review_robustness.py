@@ -9,6 +9,8 @@ from f2d.run_review_robustness import (
     _construct_parametric_demand,
     _copula_uniforms,
 )
+from f2d.run_ws4_kappa_margin import summarize_margin_cost
+from f2d.run_mechanism_analysis import summarize_support_binding
 
 
 def _toy_inputs():
@@ -50,3 +52,39 @@ def test_copula_draws_are_reproducible_and_dependence_changes():
     assert np.array_equal(u1, u2)
     assert not np.array_equal(u1, u3)
     assert np.all((u1 > 0) & (u1 < 1))
+
+
+def test_margin_cost_summary_uses_sku_specific_economic_outputs():
+    aggregate = pd.DataFrame({
+        "kappa_h": [.1, .1, .2, .2],
+        "arm": ["chronos2-zs", "emp-daily"] * 2,
+        "cost_margin": [9.0, 10.0, 19.0, 20.0],
+    })
+    alpha = pd.DataFrame({
+        "kappa_h": [.1, .2],
+        "alpha_implied_p10": [.90, .80],
+        "alpha_implied_p50": [.95, .90],
+        "alpha_implied_p90": [.99, .97],
+    })
+    got = summarize_margin_cost(aggregate, alpha)
+    np.testing.assert_allclose(
+        got["chronos2_zs_cost_reduction_pct"], [10.0, 5.0])
+    assert list(got["alpha_implied_p50"]) == [.95, .90]
+
+
+def test_support_binding_summary_uses_month_specific_convolution_edge():
+    per_sku = pd.DataFrame({
+        "month": ["2020-01-01", "2020-02-01"],
+        "S_tsfm": [320.0, 299.0],
+        "S_emp": [319.0, 300.0],
+    })
+    got = summarize_support_binding(per_sku, vmax=10, lead_days=1)
+    by_policy = got.set_index("policy")
+    assert by_policy.loc["chronos2-zs", "n_binding"] == 1
+    assert by_policy.loc["emp-daily", "n_binding"] == 1
+    assert by_policy.loc["chronos2-zs", "support_min"] == 300
+    assert by_policy.loc["chronos2-zs", "support_max"] == 320
+    assert np.isclose(
+        by_policy.loc["chronos2-zs", "max_support_utilization_pct"],
+        100.0,
+    )
