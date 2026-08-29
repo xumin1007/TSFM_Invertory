@@ -1,0 +1,4 @@
+generator,n_imputed_draw_day_series,mean_excess,median_excess,p95_excess
+empirical_conditional,1731518,6.33218651495393,2.0,22.0
+poisson,691442,2.791930487300453,1.0,8.0
+negative_binomial,988685,5.034933269949478,2.0,16.0

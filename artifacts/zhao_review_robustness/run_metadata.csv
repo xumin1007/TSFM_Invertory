@@ -1,0 +1,2 @@
+n_series,n_origins,n_alphas,n_latent_draws,copula_draws,bootstrap_reps,censoring_rate,elapsed_seconds
+1135,5,2,50,16384,10000,0.3530837004405286,3707.3204023838043
