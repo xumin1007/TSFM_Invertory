@@ -47,6 +47,43 @@ EWM_HALFLIFE = 30.0
 FT_CKPT = cfgmod.ARTIFACT_DIR / "zhao_finetune" / "chronos2-ft-full" / "ft"
 
 
+def summarize_margin_cost(
+    aggregate: pd.DataFrame,
+    alpha_summary: pd.DataFrame,
+    focal_arm: str = "chronos2-zs",
+    baseline_arm: str = "emp-daily",
+) -> pd.DataFrame:
+    """Create the compact reviewer-facing margin-cost summary.
+
+    The full output retains every arm.  This deterministic summary combines
+    the SKU-specific implied-critical-ratio distribution with the focal
+    Chronos-2 versus empirical comparison used in the paper.
+    """
+    required = {"kappa_h", "arm", "cost_margin"}
+    missing = required.difference(aggregate.columns)
+    if missing:
+        raise ValueError(f"margin aggregate missing columns: {sorted(missing)}")
+
+    wide = aggregate.pivot(index="kappa_h", columns="arm",
+                           values="cost_margin")
+    for arm in (focal_arm, baseline_arm):
+        if arm not in wide:
+            raise ValueError(f"margin aggregate missing arm: {arm}")
+
+    out = alpha_summary.merge(
+        wide[[focal_arm, baseline_arm]].reset_index(),
+        on="kappa_h", how="inner", validate="one_to_one")
+    out = out.rename(columns={
+        focal_arm: "chronos2_zs_cost",
+        baseline_arm: "emp_daily_cost",
+    })
+    rel = 100.0 * (out["chronos2_zs_cost"]
+                   / out["emp_daily_cost"] - 1.0)
+    out["chronos2_zs_relative_cost_pct"] = rel
+    out["chronos2_zs_cost_reduction_pct"] = -rel
+    return out.sort_values("kappa_h").reset_index(drop=True)
+
+
 def _daily_grids(arm, sids, ctx, n_days, pipe, ft_pipe, batch_size):
     if arm == "emp-daily":
         emp = np.array([np.quantile(ctx[s], NATIVE_LEVELS, method="inverted_cdf")
@@ -195,6 +232,8 @@ def main(argv=None) -> int:
         ["alpha_implied_p10", "alpha_implied_p50",
          "alpha_implied_p90"]].mean().reset_index()
     a_agg.to_csv(ART / "implied_alpha_by_kappa.csv", index=False)
+    summarize_margin_cost(agg, a_agg).to_csv(
+        ART / "margin_cost_summary.csv", index=False)
 
     # ---- 报告 ----
     print("\n" + "=" * 72)

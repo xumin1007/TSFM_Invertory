@@ -19,7 +19,6 @@ import time
 
 import numpy as np
 import pandas as pd
-import torch
 from scipy import stats as sp_stats
 
 from . import config as cfgmod
@@ -38,6 +37,50 @@ LEAD_DAYS = 1
 MIN_CONTEXT = 30
 
 VALID_MONTHS = [pd.Timestamp("2019-07-01"), pd.Timestamp("2019-08-01")]
+
+
+def summarize_support_binding(
+    per_sku: pd.DataFrame,
+    vmax: int = VMAX_DEC,
+    lead_days: int = LEAD_DAYS,
+    policies: tuple[tuple[str, str], ...] = (
+        ("chronos2-zs", "S_tsfm"),
+        ("emp-daily", "S_emp"),
+    ),
+) -> pd.DataFrame:
+    """Audit whether stocking targets bind at the convolution support edge."""
+    required = {"month", *(column for _, column in policies)}
+    missing = required.difference(per_sku.columns)
+    if missing:
+        raise ValueError(f"binding audit missing columns: {sorted(missing)}")
+    if vmax <= 0 or lead_days < 0:
+        raise ValueError("vmax must be positive and lead_days nonnegative")
+
+    month = pd.to_datetime(per_sku["month"], errors="raise")
+    support = (month.dt.days_in_month.to_numpy() + lead_days) * vmax
+    rows = []
+    for policy, column in policies:
+        target = per_sku[column].to_numpy(float)
+        valid = np.isfinite(target) & np.isfinite(support)
+        target_v = target[valid]
+        support_v = support[valid]
+        if target_v.size == 0:
+            raise ValueError(f"binding audit has no finite targets for {column}")
+        utilization = target_v / support_v
+        binding = np.isclose(target_v, support_v, rtol=0.0, atol=1e-9)
+        rows.append({
+            "policy": policy,
+            "n_targets": int(target_v.size),
+            "n_binding": int(binding.sum()),
+            "binding_rate_pct": float(100.0 * binding.mean()),
+            "target_max": float(target_v.max()),
+            "support_min": int(support_v.min()),
+            "support_max": int(support_v.max()),
+            "p99_support_utilization_pct": float(
+                100.0 * np.quantile(utilization, 0.99)),
+            "max_support_utilization_pct": float(100.0 * utilization.max()),
+        })
+    return pd.DataFrame(rows)
 
 
 def _nonstationarity_metrics(hist: np.ndarray, val_sales: float,
@@ -76,6 +119,8 @@ def _nonstationarity_metrics(hist: np.ndarray, val_sales: float,
 
 
 def main(argv=None) -> int:
+    import torch
+
     ap = argparse.ArgumentParser()
     ap.add_argument("--n-series", type=int, default=2000)
     ap.add_argument("--device", default="mps")
@@ -171,6 +216,10 @@ def main(argv=None) -> int:
 
     df = pd.DataFrame(rows)
     df.to_csv(ART / "mechanism_per_sku.csv", index=False)
+    binding_path = (cfgmod.ARTIFACT_DIR / "zhao_review_robustness"
+                    / "vmax_binding_audit.csv")
+    binding_path.parent.mkdir(parents=True, exist_ok=True)
+    summarize_support_binding(df).to_csv(binding_path, index=False)
     print(f"\n{len(df)} per-SKU-month observations")
 
     # ================================================================
