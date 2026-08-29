@@ -1,8 +1,8 @@
-# When Better Predictions Fail: Evaluating Foundation Models for Inventory Decisions
+# From Forecasts to Inventory Value: Time Series Foundation Models under Censored Sales
 
 This repository contains the code and reproducibility artifacts for the paper:
 
-> **When Better Predictions Fail: Evaluating Foundation Models for Inventory Decisions**
+> **From Forecasts to Inventory Value: Time Series Foundation Models under Censored Sales**
 > Min Xu (2026). Submitted to *Manufacturing & Service Operations Management (MSOM)*.
 
 ## Overview
@@ -130,7 +130,11 @@ and acceptance criteria for this robustness run.
 |---|---|
 | Static cost reduction (Chronos-2) | 6–14% |
 | Dynamic cost reduction (replay) | Not statistically detectable under censored sales |
-| Pooled DiD (semi-synthetic) | −8.28 pp (p < 0.001) |
+| Demand-measure DiD (empirical-conditional generator) | −8.28 pp (95% CI: −17.22 to −4.23) |
+| Demand-measure DiD (alternative generators) | Poisson: −2.54 pp; negative binomial: −6.03 pp (both 95% CIs exclude zero) |
+| PMF-reconstruction sensitivity | Alternative mappings change pooled attenuation by less than 0.1 pp |
+| Protection-interval dependence | Pooled attenuation is 9.56 pp at ρ=0.25 and 11.70 pp at ρ=0.50 |
+| Operational-tail calibration | Chronos-2 coverage exceeds Emp-retuned by 3.63–4.25 pp |
 | Conversion region | 4 of 25 grid points |
 | Converting points | (α,λ) ∈ {(0.95,0), (0.98,0), (0.98,0.25), (0.98,0.50)} |
 
@@ -140,7 +144,7 @@ If you use this code, please cite:
 
 ```bibtex
 @article{xu2026tsfm,
-  title={When Better Predictions Fail: Evaluating Foundation Models for Inventory Decisions},
+  title={From Forecasts to Inventory Value: Time Series Foundation Models under Censored Sales},
   author={Xu, Min},
   journal={Working Paper, submitted to Manufacturing \& Service Operations Management},
   year={2026}
