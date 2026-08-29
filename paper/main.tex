@@ -119,7 +119,7 @@ Under logged censored sales, this advantage falls to 3.46\% in a continuous carr
 A paired semi-synthetic experiment holds policies fixed and replaces logged sales with latent demand.
 The dynamic advantage then becomes 11.12\%, while attenuation falls to 0.47 percentage points; the difference-in-differences is $-8.28$ percentage points ($p<0.001$).
 The demand-measure wedge remains negative under Poisson and negative-binomial latent-demand generators, and alternative quantile-to-distribution mappings leave the baseline attenuation essentially unchanged.
-An exact cost bridge attributes 98\% of the differential evaluation bias to shortage-cost measurement.
+Within this factorial, an exact cost bridge attributes 98\% of the differential evaluation bias to shortage-cost measurement.
 At the two operational service levels, Chronos-2 attains 3.6--4.2 percentage points higher realized protection-interval coverage than the empirical policy under both logged sales and latent demand.
 Finally, a prespecified service-level--recensoring grid provides simultaneous evidence for both the static and dynamic advantages at four of 25 evaluated combinations.
 %
@@ -256,8 +256,11 @@ A separate line of work addresses the inventory problem when demand observations
 Recent work develops complementary approaches to recovering or acting on demand beyond the observed sales boundary.
 \citet{PedregalTrapero2024} formulate a Tobit innovations state-space model with time aggregation for settings in which the censoring threshold is observed and can vary over time.
 \citet{WangEtAl2025FreshRetail} provide a stockout-annotated retail benchmark and a two-stage pipeline that reconstructs latent demand before forecasting.
+\citet{Rodrigues2025DiffusionAware} combines a Tobit likelihood with graph diffusion to recover censored demand while representing transfers toward related products.
 From a decision perspective, \citet{HssaineSinclair2024} characterize how the observable censoring boundary determines identifiability and minimax regret in the offline censored newsvendor.
+\citet{GundemQi2025} study dependent censored demand in a joint pricing--inventory problem and develop censored and pessimistic fitted-Q-iteration procedures for learning sequential policies from offline data.
 Together, these studies emphasize that the information available about stock availability and unmet demand is part of the decision problem, rather than merely a data-cleaning detail.
+They are adjacent to the present study: these methods recover censored demand or learn sequential policies, while our fixed-policy design quantifies how the demand measure changes policy evaluation.
 
 Our work contributes to this literature in two ways.
 First, we evaluate a \emph{pretrained model} as the forecasting component of an inventory policy and follow its performance from static loss into closed-loop replenishment.
@@ -341,6 +344,8 @@ Given a forecaster that produces a probabilistic prediction of daily demand, the
 
 \item \textbf{PMF reconstruction and convolution.}
   We reconstruct a probability mass function (PMF) on integer support $\{0, 1, \ldots, v_{\max}\}$ from the quantile grid using a midpoint CDF estimator.
+  The production cap is $v_{\max}=60$ units per day for Zhao and $v_{\max}=300$ for OSA; convolution over $m$ days therefore has support $\{0,\ldots,mv_{\max}\}$.
+  Probability above the highest supplied level $\tau=0.99$ is closed at each row's repaired $\hat q(0.99)$, and the numerical cap is selected by increasing $v_{\max}$ until arm-level effect directions and paired loss differences stabilize.
   We then convolve the $\text{PI}_i$ daily PMFs via the fast Fourier transform (FFT) to obtain the PMF of protection-interval demand:
   \begin{equation}\label{eq:convolve}
     p_i^{\text{PI}} = \text{IFFT}\!\left(\prod_{t=1}^{\text{PI}_i} \text{FFT}(p_{i,t})\right),
@@ -705,6 +710,10 @@ Electronic Companion Figure~EC.1 shows how the static cost comparison changes as
 At $L = 14$, fine-tuned Chronos-2 reduces cost by 6.4\% relative to the empirical method (36.17 vs.\ 38.65), reflecting the TSFM's ability to produce better-calibrated multi-step-ahead forecasts.
 The online-appendix figure also translates the comparison across holding-cost rates $\kappa_h \in \{0.10, 0.15, 0.20, 0.25, 0.30\}$.
 At a fixed critical ratio, changing $\kappa_h$ scales holding and shortage costs together; the stable relative gap documents the corresponding economic rescaling.
+We therefore conduct a separate margin-cost analysis in which $p_i$ is the observed unit margin, $h_i=\kappa_h c_i/12$, and the policy target is recomputed at the SKU-specific critical ratio $\alpha_i=p_i/(p_i+h_i)$.
+As $\kappa_h$ increases from 0.10 to 0.30, the median implied $\alpha_i$ moves from 0.967 to 0.907, while zero-shot Chronos-2's static cost remains 7.1--8.9\% below the empirical policy.
+At the common $\alpha=0.95$ operating point, replacing derived shortage costs with observed unit margins yields a paired cost difference of $-2.86$ per SKU-month (95\% SKU-cluster-bootstrap CI: $-4.61$ to $-1.21$).
+Electronic Companion Section~EC.2 reports the complete margin-cost comparison.
 
 \subsection{Cross-Dataset Consistency (OSA)}
 
@@ -842,6 +851,7 @@ For each positive-sales day $t$ in a classified month, draw $k$ samples
 where $\widehat F_i$ is the series-specific donor distribution.
 If the empirical conditional set is empty, we add a geometric excess to $Y_{it}$, with success probability equal to the inverse of the series' mean positive donor demand (bounded at one).
 All other days remain unchanged, $D^{(k)}_{it}=Y_{it}$; in particular, the procedure does not assign latent demand to zero-sales days because the data do not reveal its timing within a classified month.
+Consequently, the observed zero mass and the complete path outside the predeclared positive-sales imputation cells are preserved across demand measures.
 We generate 50 draws using SHA-256 seeds keyed by global seed, series, and draw, which makes a series' draws invariant to the inclusion of other series.
 Forecasts, empirical-baseline selections, and base-stock levels are computed once from the logged history and then held fixed across all draws and both demand measures.
 The two-way bootstrap jointly resamples SKU clusters and latent-demand draw IDs, carrying both sampling and imputation variation into every $D$-dependent interval.
@@ -849,6 +859,7 @@ We assess sensitivity to the latent-demand generator with two parametric alterna
 The first fits a Poisson distribution using the sample mean; the second fits a negative-binomial distribution by matching the sample mean and variance, with a Poisson fallback when the fitted variance does not exceed the mean.
 On each positive-sales day in a classified month, we draw from the fitted distribution conditional on demand being at least the logged sale, $D_{it}\geq Y_{it}$.
 The censoring classification, imputed days, keyed draw structure, fixed policies, and two-way inference are otherwise identical across the three generators.
+The resulting calibrated demand measures span a transparent range of reconstructed positive excess while preserving a common imputation support.
 Eligibility is fixed before either replay: starting from the 1{,}836-series common-support manifest, we exclude 701 series whose March unit cost is nonfinite and retain the remaining 1{,}135 series.
 Each retained series contributes all five scored origins and both prespecified service levels, yielding exactly $1{,}135\times5\times2=11{,}350$ policy-pair cells under both $Y$ and $D$.
 The common support retains all 11{,}350 predeclared cells, including legitimate zero-cost cells, with identical keys under $Y$ and $D$.
@@ -871,6 +882,8 @@ The static relative cost effect remains similar under the two demand measures ($
 Consequently, attenuation is substantial under censored sales ($A_Y = +8.75$ percentage points, 95\% CI: $3.43$--$19.38$, $p < 0.001$), whereas latent-demand evaluation preserves nearly the full static advantage ($A_D = +0.47$ percentage points, 95\% CI: $-1.80$--$+3.55$).
 The difference-in-differences estimate is $-8.28$ percentage points (95\% CI: $-17.26$ to $-4.30$, $p < 0.001$).
 Within the calibrated semi-synthetic design, changing the demand measure materially changes the estimated attenuation while policies and inventory-transition rules remain fixed.
+The estimand is therefore the change in measured value of these fixed policies induced by the demand measure on Zhao's common support.
+The 98\% bridge reported below is the corresponding exact within-factorial accounting share; formal dynamic inference is anchored in the 1{,}135-series Zhao panel, while OSA supplies a separate directional replication of the forecast-to-decision ordering.
 
 \begin{table}[ht]
 \caption{Sensitivity to the latent-demand generator. Relative cost effects are percentages; attenuation and DiD are percentage points. Brackets report 95\% two-way-bootstrap CIs. Mean excess is the average imputed demand above logged sales on changed draw--day--series observations.}\label{tab:dgp-sensitivity}
@@ -890,7 +903,6 @@ Negative binomial     & 5.03 & $-9.79\;[-15.39,-3.03]$  & $+2.72\;[-0.17,+7.45]$
 
 Table~\ref{tab:dgp-sensitivity} shows that the demand-measure wedge is not specific to the empirical resampling rule.
 The DiD remains negative and its confidence interval excludes zero under all three generators, ranging from $-2.54$ percentage points under the lighter-excess Poisson specification to $-8.28$ under empirical conditional resampling.
-The dynamic Chronos-2 advantage remains statistically detectable under the empirical and negative-binomial generators; under Poisson demand, its point estimate is $-6.94\%$ and the interval spans zero.
 The monotone ordering between mean reconstructed excess demand and the DiD magnitude clarifies the economic role of the generator: heavier recovered unmet demand creates a larger difference between latent-demand and logged-sales evaluation.
 
 \paragraph{Distributional construction checks.}
@@ -916,6 +928,9 @@ Gaussian copula AR(1), $\rho=0.50$ & $-9.55$ & $+2.15$ & $+11.70$ \\
 \end{table}
 
 The two alternative PMF mappings change the pooled attenuation by less than 0.1 percentage point.
+A complementary seven-arm decision-layer audit varies the midpoint support cap over $v_{\max}\in\{40,60,100,200\}$, with 60 as the production value.
+At the production cap, none of the 6{,}738 focal $\alpha=0.95$ validation targets reaches the protection-interval support boundary; the 99th-percentile support utilization is 32.4\% for Chronos-2 and 29.1\% for the empirical policy.
+Every reported comparison retains its direction; relative effect magnitudes remain within 0.861--1.120 of the production estimate, and the minimum correlation of per-series loss differences with the production setting is 0.938.
 Positive within-protection-interval dependence instead raises attenuation: the static point estimate continues to favor Chronos-2, while its measured dynamic advantage weakens as $\rho$ increases.
 The resulting evidence locates the sensitivity in the joint demand path rather than in the finite quantile-grid interpolation.
 
@@ -1030,11 +1045,14 @@ The grid evaluates this accounting condition at 25 prespecified points using fam
 \paragraph{Grid design.}
 We evaluate a prespecified $5\times 5$ grid:
 \[
-\alpha\in\{0.80,0.85,0.90,0.95,0.98\},\qquad
-\lambda\in\{0,0.25,0.50,0.75,1\}.
+\begin{aligned}
+\alpha &\in \{0.80,0.85,0.90,0.95,0.98\},\\
+\lambda &\in \{0,0.25,0.50,0.75,1\}.
+\end{aligned}
 \]
 Each $\alpha$ receives its own policy quantile and cost weights $h=\kappa_h c/12$, $p=h\alpha/(1-\alpha)$; policies are fixed across the censoring dimension and across latent-demand draws.
 The recensoring fraction $\lambda$ interpolates between latent demand ($\lambda=0$, corresponding to $D$) and observed sales ($\lambda=1$, corresponding to $Y$): starting from $D$, a fraction $\lambda$ of naturally-censored (series, origin) months have their demand replaced with $Y$, yielding intermediate demand paths $X^{(k,\lambda)}$.
+Operationally, $\lambda$ is the share of identified stockout-month records treated as sales-only rather than demand-recovered observations, so the grid traces a nested decline in demand observability.
 The censored months are allocated through SHA-256 orderings keyed by latent-demand draw, series, and origin.
 Thus the two-way bootstrap propagates both SKU-sampling and recensoring-allocation uncertainty.
 Censoring sets are nested within each draw: for $\lambda_1<\lambda_2$, every month recensored at $\lambda_1$ is also recensored at $\lambda_2$.
@@ -1042,9 +1060,11 @@ The natural censoring rate is 35.3\% over the full eligible panel; restricting t
 Actual scored-origin recensoring rates (averaged across 50 draws) are $0\%$, $9.1\%$, $18.3\%$, $27.3\%$, and $36.5\%$ for $\lambda=0,0.25,0.50,0.75,1$.
 
 Inference uses max-$|t|$ simultaneous bands---the maximum absolute standardized bootstrap deviation---over two families: a 50-dimensional \emph{conversion family} (25 $R_0$ + 25 $R_3$ values) and a 45-dimensional \emph{mechanism family} (25 $A$ values + 20 non-mechanical $\mathrm{DiD}$ values, excluding the five $\mathrm{DiD}(\alpha,0)\equiv 0$).
+The resulting 95\% bands control the familywise error rate at 5\% within each prespecified family.
 We define the conversion region as the set of grid points where the simultaneous upper bounds of \emph{both} $R_0$ and $R_3$ are below zero.
 The analysis uses 50{,}000 two-way bootstrap resamples over $1{,}135$ SKU clusters and 50 latent-demand draws.
 Within each replication, every grid estimand uses the same resampled SKU clusters, and every $D$-dependent estimand also uses the same resampled draw IDs; these shared picks preserve dependence across grid points and contrasts.
+Attenuation and DiD are formed inside each replication before their bootstrap variances are estimated, retaining the covariance among their component estimands.
 For each coordinate, we center the bootstrap deviations at the point estimate and studentize by its bootstrap standard error.
 The 95th percentile of the replication-level maximum $|t|$ statistic supplies the family-specific simultaneous critical value.
 The online appendix reports pointwise and simultaneous intervals for all 25 grid points.
@@ -1197,7 +1217,7 @@ The 12.21\% static advantage becomes 3.46\% in the continuous observed-sales rep
 When the same fixed policies are evaluated on semi-synthetic latent demand, the dynamic advantage is 11.12\% and attenuation is 0.47 percentage points.
 The difference-in-differences estimate is $-8.28$ percentage points.
 The DiD remains negative and statistically distinguishable from zero under Poisson and negative-binomial latent-demand generators ($-2.54$ and $-6.03$ percentage points), showing that the evaluation wedge persists across lighter and heavier reconstructions of unmet demand.
-The cost bridge attributes 98\% of the differential bias to shortage-cost measurement.
+Within the calibrated factorial, the cost bridge attributes 98\% of the differential bias to shortage-cost measurement.
 Logged sales lower measured shortage cost for both policies.
 They favor the lower-stocking empirical policy more, thereby compressing Chronos-2's apparent advantage.
 Alternative quantile-to-PMF mappings leave attenuation nearly unchanged, while positive within-protection-interval dependence increases it from 8.75 to 9.56--11.70 percentage points.
@@ -1211,6 +1231,7 @@ The grid provides evidence for prioritizing deployment and improved measurement 
 The complementary analyses point to practical implementation choices.
 Chronos-2 creates its largest product-level gains after upward demand-level shifts and produces useful decisions with relatively short local histories.
 Operating-point fine-tuning improves cost by 3--5\% relative to standard multi-quantile fine-tuning in the examined settings.
+Under observed-margin costs and SKU-specific critical ratios, zero-shot Chronos-2 retains a 7.1--8.9\% static cost advantage across the examined holding-cost rates.
 TSFM forecast summaries also complement operational state variables: hybrid state-dependent decision rules attain the lowest static point estimates in both evaluation windows, suggesting a path for integrating pretrained forecasts into existing inventory systems rather than rebuilding those systems around a standalone model.
 
 \paragraph{Managerial Implications.}
@@ -1221,12 +1242,9 @@ At the same time, firms that evaluate policies from transaction logs should inve
 Recovering unmet demand prevents a superior policy from appearing less valuable merely because observed sales omit the shortage events that distinguish policies.
 Once deployed, retailers can monitor upper-tail coverage and stockout incidence by service class and use persistent deviations to trigger empirical-baseline retuning or policy review.
 
-\paragraph{Research Opportunities.}
-The results motivate three extensions.
-First, richer stockout timing, substitution, and availability records can extend the generator sensitivity reported here into transaction-level recovery of unmet demand.
-Second, an endogenous closed-loop design can update each policy's forecast from its own realized, censored history and thereby combine the fixed-policy evaluation difference documented here with forecasting feedback.
-Third, longer panels, additional retail categories, and broader policy classes---including $(s,S)$ and $(r,Q)$ systems---can show how the pattern varies with product economics and replenishment structure.
-These extensions build directly on the paper's central evidence: predictive quality, inventory dynamics, and demand measurement jointly shape the measured operational value of a forecasting technology in the settings studied here.
+\paragraph{Scope of Evidence.}
+Formal dynamic and semi-synthetic inference comes from the 1{,}135-series Zhao common-support panel; the OSA analysis supplies a directional consumer-goods check under uncensored demand and longer lead times.
+Within this empirical scope, the fixed-policy factorial, exact cost bridge, alternative demand generators, and service-level--recensoring grid jointly establish how predictive quality, inventory dynamics, and demand measurement shape the measured operational value of Chronos-2.
 
 \paragraph{Code and Data Availability.}
 Code, frozen result files, audit scripts, and reproduction instructions are available at

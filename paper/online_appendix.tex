@@ -55,18 +55,28 @@ Time Series Foundation Models under Censored Sales''\par}
 
 \noindent\textbf{Companion roadmap.}
 Section~EC.1 reports every point estimate and simultaneous interval from the service-level--recensoring grid.
-Section~EC.2 collects the supporting decision-layer, fine-tuning, short-history, and censored-learning results.
-Section~EC.3 reports the latent-demand-generator, protection-interval-dependence, PMF-reconstruction, and operational-tail-calibration checks added for distributional robustness.
+Section~EC.2 collects the supporting decision-layer, economic-sensitivity, fine-tuning, short-history, and censored-learning results.
+Section~EC.3 reports the latent-demand-generator, protection-interval-dependence, PMF-reconstruction, support-cap binding and sensitivity, and operational-tail-calibration checks added for distributional robustness.
 The main paper's Semi-Synthetic Censoring Experiment presents the cost bridge in three consecutive steps: the exact bridge identity, arm-level total/holding/shortage costs, and component-wise two-way-bootstrap intervals.
 This placement keeps the mechanism derivation adjacent to the principal $2\times2$ result, while the companion supplies the full robustness detail and grid cells used to audit it.
+The repository's peer-review extension manifest records the scripts, exact run parameters, output paths, SHA-256 hashes, and regression tests for the companion tables, margin-cost analysis, and support-cap audits.
 \vspace{1.25em}
 
 \section{Service-Level--Recensoring Grid Results}\label{oa:grid}
 
 Tables~\ref{tab:full_conversion} and~\ref{tab:full_mechanism} report the complete results for the $5\times 5$ service-level--recensoring grid experiment.
+Operationally, $\lambda$ is the share of identified stockout-month records evaluated as sales-only rather than demand-recovered observations; the five grid values correspond to scored-origin recensoring rates of 0\%, 9.1\%, 18.3\%, 27.3\%, and 36.5\%.
 The conversion family contains 50 estimands ($25\;R_0+25\;R_3$) with simultaneous critical value $c_{R_0,R_3}=2.763$.
 The mechanism family contains 45 estimands ($25\;A+20$ non-mechanical $\mathrm{DiD}$) with $c_{A,\mathrm{DiD}}=2.895$.
 All intervals use $B=50{,}000$ two-way bootstrap resamples over SKU clusters and latent-demand draws with draw-specific SHA-256 recensoring orderings.
+For coordinate $j$, let $\widehat\theta_j^{*(b)}$ denote its estimate in bootstrap replication $b$ and let $\widehat s_j=\operatorname{sd}_b(\widehat\theta_j^{*(b)})$.
+The replication statistic is
+\[
+T_b=\max_{j\in\mathcal J}
+\left|\frac{\widehat\theta_j^{*(b)}-\widehat\theta_j}{\widehat s_j}\right|,
+\]
+and the 95th percentile of $T_b$ supplies the family critical value.
+Each attenuation and DiD is formed within the replication before $\widehat s_j$ is computed, thereby retaining all component covariance; the resulting bands control familywise error at 5\% within each prespecified family.
 Throughout this section, $R_0$ and $R_3$ are relative cost effects; negative values indicate lower cost for Chronos-2 than for the retuned empirical baseline.
 
 \begin{table}[htbp]
@@ -253,6 +263,45 @@ DDM                   & 35.95 & 78.87 & 0.975 & 60.5 \\
 \end{tabular}
 \end{table}
 
+\begin{table}[htbp]
+\caption{Static cost robustness to the economic specification on the Zhao validation sample. P3 uses the common $\alpha=0.95$ target; P3m recomputes the target at the SKU-specific margin-implied critical ratio. Reduction is relative to emp-daily.}
+\label{tab:oa_margin_cost}
+\centering\small
+\begin{tabular}{llrrr}
+\toprule
+\textbf{Cost rule} & \textbf{Target rule} & \textbf{Chronos-2 ZS} & \textbf{Emp-daily} & \textbf{Reduction} \\
+\midrule
+Derived & P3, $\alpha=0.95$ & 41.57 & 45.47 & 8.57\% \\
+Observed margin & P3, $\alpha=0.95$ & 37.68 & 40.55 & 7.06\% \\
+Observed margin & P3m, SKU-specific $\alpha_i$ & 37.29 & 40.34 & 7.57\% \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+For the two common-target rows, paired SKU-cluster-bootstrap differences are $-3.90$ with a 95\% CI of $[-6.17,-1.98]$ under derived costs and $-2.86$ with a 95\% CI of $[-4.61,-1.21]$ under observed-margin costs.
+
+\begin{table}[htbp]
+\caption{Margin-cost sensitivity with SKU-specific critical ratios. The unit shortage cost is observed margin, the monthly holding cost is $\kappa_h c_i/12$, and each stocking target is recomputed at $\alpha_i=p_i/(p_i+h_i)$.}
+\label{tab:oa_margin_kappa}
+\centering\small
+\resizebox{\textwidth}{!}{%
+\begin{tabular}{crrrrrr}
+\toprule
+$\boldsymbol{\kappa_h}$ & $\boldsymbol{\alpha_i}$ \textbf{p10} & $\boldsymbol{\alpha_i}$ \textbf{p50} & $\boldsymbol{\alpha_i}$ \textbf{p90} & \textbf{Chronos-2 ZS} & \textbf{Emp-daily} & \textbf{Reduction} \\
+\midrule
+0.10 & 0.939 & 0.967 & 0.987 & 31.93 & 35.07 & 8.94\% \\
+0.15 & 0.911 & 0.951 & 0.980 & 34.60 & 37.84 & 8.55\% \\
+0.20 & 0.885 & 0.936 & 0.974 & 37.07 & 40.24 & 7.89\% \\
+0.25 & 0.860 & 0.921 & 0.968 & 39.33 & 42.59 & 7.67\% \\
+0.30 & 0.836 & 0.907 & 0.961 & 41.58 & 44.77 & 7.11\% \\
+\bottomrule
+\end{tabular}
+}
+\end{table}
+
+The margin-based comparison changes both the economic weights and the SKU-level target rather than proportionally rescaling a fixed critical ratio.
+Chronos-2's lower static cost is retained throughout the evaluated holding-cost range.
+
 \begin{figure}[htbp]
 \centering
 \begin{tikzpicture}
@@ -347,6 +396,7 @@ DDM                   & 35.95 & 78.87 & 0.975 & 60.5 \\
 This section reports the checks that support the semi-synthetic and protection-interval constructions in the main paper.
 All analyses retain the same 1{,}135 cost-eligible series, five scored origins, two high service levels, origin-specific retuned empirical comparators, and fixed policy support.
 The exact cost-bridge identity, arm-level total/holding/shortage costs, and component-wise bridge intervals are grouped together in the main paper's ``Semi-Synthetic Censoring Experiment'' subsection (Tables ``Arm-level dynamic-cost bridge'' and ``Holding/shortage decomposition'').
+These quantities identify a fixed-policy measurement contrast on the Zhao common support: the 98\% bridge is the exact accounting share within that factorial, while the OSA evidence is a separate directional cross-dataset check.
 
 \subsection{Latent-Demand Generator Sensitivity}\label{oa:dgp}
 
@@ -371,6 +421,7 @@ X_{it}\sim \operatorname{NB}(r_i,q_i)\mid X_{it}\geq Y_{it};
 otherwise it uses the Poisson specification.
 Numerically degenerate truncations use the same series-specific geometric fallback.
 All three generators leave every other day equal to logged sales and use 50 SHA-256-keyed draws.
+This construction preserves the observed zero mass and timing outside the common set of positive-sales imputation cells.
 
 Table~\ref{tab:oa_dgp_diag} summarizes positive imputed increments, $D-Y>0$.
 The three specifications span a transparent severity range: Poisson has the lightest positive excess, the moment-matched negative binomial is intermediate, and empirical conditional resampling has the largest mean and upper tail.
@@ -407,7 +458,6 @@ Negative binomial     & $-12.51\;[-17.66,-7.15]$ & $-9.79\;[-15.39,-3.03]$  & $+
 
 The DiD is negative with an interval below zero for every generator.
 Its magnitude follows the recovered-excess severity in Table~\ref{tab:oa_dgp_diag}: 2.54 percentage points for Poisson, 6.03 for negative binomial, and 8.28 for empirical conditional resampling.
-The dynamic effect remains statistically detectable under the empirical and negative-binomial generators; the lighter Poisson generator yields a negative point estimate with an interval spanning zero.
 
 \subsection{PMF Reconstruction and Protection-Interval Dependence}\label{oa:aggregation}
 
@@ -466,6 +516,47 @@ AR(1) copula, $\rho=0.50$ & Pooled & $-9.55\;[-16.39,-1.73]$ & $+2.15\;[-7.41,+1
 Both alternative PMF reconstructions reproduce the baseline attenuation to within 0.1 percentage point in the pooled estimate.
 Positive temporal dependence produces a different and economically interpretable shift: the static effect continues to favor Chronos-2, while attenuation increases with $\rho$ and the dynamic point estimate weakens.
 
+\paragraph{Support-cap audit.}
+The integer support cap is a numerical resolution choice: Zhao uses $v_{\max}=60$ units per day, so an $m$-day convolution has support through $60m$.
+For each daily PMF, probability beyond the highest supplied quantile level is closed at that row's repaired $q_{0.99}$.
+The practical selection rule is to increase the cap until the reported arm-level effect directions are unchanged and the per-series loss differences remain highly correlated with the production setting.
+
+\begin{table}[htbp]
+\caption{Binding audit at the production cap for the focal $\alpha=0.95$ validation targets. Support utilization is the policy target divided by the $m v_{\max}=1{,}920$ protection-interval support edge.}
+\label{tab:oa_vmax_binding}
+\centering\small
+\begin{tabular}{lrrrr}
+\toprule
+\textbf{Policy} & \textbf{Targets} & \textbf{Boundary hits} & \textbf{p99 utilization} & \textbf{Maximum utilization} \\
+\midrule
+Chronos-2 ZS & 3{,}369 & 0 & 32.4\% & 99.7\% \\
+Emp-daily    & 3{,}369 & 0 & 29.1\% & 98.7\% \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+None of the 6{,}738 targets binds at the support edge.
+The registered cap scan below then verifies the downstream comparison directly, including the most extreme target cells.
+
+\begin{table}[htbp]
+\caption{Decision-layer sensitivity to the daily support cap under the production midpoint reconstruction. Effect ratios compare each reported arm contrast with its value at $v_{\max}=60$; $r_{\min}$ is the smallest correlation of per-series loss differences with the production setting.}
+\label{tab:oa_vmax}
+\centering\small
+\begin{tabular}{crrrc}
+\toprule
+$\boldsymbol{v_{\max}}$ & \textbf{Effect-ratio minimum} & \textbf{Effect-ratio maximum} & $\boldsymbol{r_{\min}}$ & \textbf{Directions retained} \\
+\midrule
+40  & 0.861 & 0.952 & 0.953 & Yes \\
+60 (production) & 1.000 & 1.000 & 1.000 & Yes \\
+100 & 0.956 & 1.088 & 0.959 & Yes \\
+200 & 0.999 & 1.120 & 0.938 & Yes \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+Across the full 40--200 range, every reported decision-layer comparison retains its direction and the effect ratios remain within 0.861--1.120.
+Together with the 12- versus 21-level results above, this audit shows that the reported transmission pattern is stable to both support resolution and quantile-grid coarsening.
+
 \subsection{Operational Tail-Calibration Diagnostics}\label{oa:tailcal}
 
 For demand measure $e\in\{Y,D\}$, policy $m$, and service level $\alpha$, define operational coverage and mean excess units as
@@ -504,9 +595,5 @@ $D$ & Emp-retuned & 0.98 & 76.53 & $-21.47\;[-22.91,-20.01]$ & 23.47 & $25.53\;[
 Chronos-2 has higher operational coverage and lower mean excess units in every demand--service-level cell.
 The coverage difference relative to Emp-retuned ranges from 3.63 to 4.25 percentage points and is similar under logged sales and latent demand.
 These policy-level diagnostics complement aggregate pinball loss by evaluating the tail events that enter shortage exposure directly.
-
-\paragraph{Reproduction.}
-The script \texttt{src/f2d/run\_review\_robustness.py} produces Tables~\ref{tab:oa_dgp_diag}--\ref{tab:oa_tailcal} without modifying the frozen principal outputs.
-The reported run uses 50 latent-demand draws, 16{,}384 scrambled Sobol paths, and 10{,}000 bootstrap replications; the repository README records the complete command and pinned model revision.
 
 \end{document}
