@@ -7,7 +7,7 @@ This repository contains the code and reproducibility artifacts for the paper:
 
 ## Overview
 
-We evaluate whether the forecasting accuracy of time-series foundation models (TSFMs) translates into better inventory decisions under realistic cost structures. Using a 1,836-series retail dataset from Zhao et al. (2023), we find that:
+We evaluate whether the forecasting accuracy of time-series foundation models (TSFMs) translates into better inventory decisions under realistic cost structures. Using a 1,836-series retail dataset from Zhao, Li, and Shen (2020), we find that:
 
 - **Chronos-2** reduces static high-service newsvendor cost by 12.21% relative to the origin-specific retuned empirical policy.
 - **Censored-demand evaluation** accounts for most of the measured forecast-to-policy attenuation in the calibrated semi-synthetic design.
@@ -17,8 +17,8 @@ We evaluate whether the forecasting accuracy of time-series foundation models (T
 
 This project uses the retail inventory dataset from:
 
-> Zhao, X., Zhao, Y., & Song, Z. (2023). An integrated framework for inventory management with supply chain coordination.
-> *Naval Research Logistics*, 70(8), 789–808.
+> Zhao, L., Li, L., & Shen, Z.-J. M. (2020). Transactional and in-store display data of a large supermarket for data-driven decision-making.
+> *Naval Research Logistics*, 67(8), 617–626.
 > DOI: [10.1002/nav.21957](https://doi.org/10.1002/nav.21957)
 
 ### Download Instructions
@@ -179,14 +179,14 @@ If you use this code, please cite:
 And the dataset:
 
 ```bibtex
-@article{zhao2023integrated,
-  title={An integrated framework for inventory management with supply chain coordination},
-  author={Zhao, Xuan and Zhao, Yao and Song, Zuo-Jun},
+@article{zhao2020supermarket,
+  author={Zhao, Lin and Li, Lefei and Shen, Zuo-Jun Max},
+  title={Transactional and In-Store Display Data of a Large Supermarket for Data-Driven Decision-Making},
   journal={Naval Research Logistics},
-  volume={70},
+  volume={67},
   number={8},
-  pages={789--808},
-  year={2023},
+  pages={617--626},
+  year={2020},
   publisher={Wiley},
   doi={10.1002/nav.21957}
 }
@@ -196,4 +196,4 @@ And the dataset:
 
 This project is licensed under the MIT License — see [LICENSE](LICENSE) for details.
 
-The Zhao et al. (2023) dataset is subject to the publisher's terms and is not redistributed in this repository.
+The Zhao et al. (2020) dataset is subject to the publisher's terms and is not redistributed in this repository.

@@ -61,7 +61,7 @@ silently load a different model version.
 
 ### Raw Zhao data (5 files, `data/external/Zhao/`)
 
-Source: Zhao et al. (2023), Naval Research Logistics, supplementary materials.
+Source: Zhao, Li, and Shen (2020), Naval Research Logistics 67(8):617–626, supplementary materials.
 
 ```
 02b018ddfca26cb6398fa0f9c4031635a763c02a9e62e9c9fa420b3f47833d50  data/external/Zhao/nav21957-sup-0001-supinfo01.xlsx  (inventory)
