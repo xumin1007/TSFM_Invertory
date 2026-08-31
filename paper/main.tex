@@ -294,6 +294,7 @@ We use a lost-sales system, where unmet demand leaves the system rather than bac
 \midrule
 $D_{it}$ & Underlying (true) demand for SKU $i$ on day $t$ \\
 $Y_{it}$ & Logged sales, $\min\{D_{it},I^{\mathrm{avail}}_{it}\}$ \\
+\add{$\mathcal R_i$} & \add{Set of review days for SKU $i$} \\
 $I^{\mathrm{avail}}_{it}$ & On-hand inventory after previously ordered units scheduled for day $t$ arrive \\
 $I^{\mathrm{end}}_{it}$ & Ending on-hand inventory, $(I^{\mathrm{avail}}_{it}-D_{it})^+$ \\
 $\mathrm{Lost}_{it}$ & Unmet demand, $(D_{it}-I^{\mathrm{avail}}_{it})^+$ \\
