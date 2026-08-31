@@ -333,6 +333,7 @@ The key input to the inventory policy is the $\alpha$-quantile of protection-int
 In the \emph{derived-cost} setting, the holding cost per unit per period is $h_i = \kappa_h \cdot c_i / M$, where $c_i$ is the unit cost, $\kappa_h$ is the annual holding-cost rate, and $M$ is the number of periods per year.
 The shortage cost is derived from the newsvendor critical ratio: $p_i = h_i \cdot \alpha / (1 - \alpha)$.
 In the \emph{margin-cost} setting, $p_i = \max(\text{price}_i - c_i, 0)$ is the unit margin, and $\alpha_i = p_i / (p_i + h_i)$ is the implied service level.
+\add{The derived-cost parameterization is useful when a manager specifies $\alpha$ but the shortage penalty is not observed; the margin-cost parameterization instead uses observable price and unit cost to proxy for the opportunity cost of a lost sale.}
 For \reduce{Zhao}\add{the Chinese-supermarket dataset}, $M=12$, so $h_i$ is a per-unit \emph{monthly} holding rate.
 In the daily closed-loop replay it multiplies mean daily ending inventory within the month, whereas $p_i$ multiplies the month's total lost units; using a daily inventory mean prevents calendar-month length from mechanically rescaling the holding term.
 
