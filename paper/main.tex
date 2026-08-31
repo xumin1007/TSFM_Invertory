@@ -308,27 +308,28 @@ $Q_{it}$ & New order quantity, $(S_{it}-\mathrm{IP}_{it})^+$ \\
 
 \subsection{Demand Model}
 
-\reduce{Let $d_{i,t} \geq 0$ denote the daily demand for SKU $i$ on day $t$. The \emph{protection-interval demand} is the cumulative demand over the next $\text{PI}_i$ days:}\add{Let $r\in\mathcal R_i$ denote a review day for SKU $i$. The target chosen after fulfillment on day $r$ must cover underlying demand until an order placed at the next review day, $r+R$, arrives at $r+R+L_i$. Thus, protection-interval demand is the cumulative underlying demand from day $r+1$ through day $r+R+L_i$:}
+Let $r\in\mathcal R_i$ denote a review day for SKU $i$. The target chosen after fulfillment on day $r$ must cover underlying demand until an order placed at the next review day, $r+R$, arrives at $r+R+L_i$. Thus, protection-interval demand is the cumulative underlying demand from day $r+1$ through day $r+R+L_i$:
 \begin{equation}\label{eq:pi_demand}
   \begin{aligned}
-    &\reduce{D_i^{\text{PI}} = \sum_{t=1}^{\text{PI}_i} D_{i,t}.}\\
-    &\add{D_{ir}^{\text{PI}} = \sum_{\ell=1}^{R+L_i} D_{i,r+\ell}, \qquad r\in\mathcal R_i.}
+    &\\
+    &D_{ir}^{\text{PI}} = \sum_{\ell=1}^{R+L_i} D_{i,r+\ell}, \qquad r\in\mathcal R_i.
   \end{aligned}
 \end{equation}
 
-\reduce{We represent the demand distribution nonparametrically through the conditional cumulative distribution function $F_i(\cdot \mid \cF_t)$, where $\cF_t$ denotes the information set (sales history) available at the review point.}
-\add{We represent its conditional distribution nonparametrically by $F_{ir}(\cdot \mid \cF_r)$, where $\cF_r$ is the sales history available on that review day.}
+
+We represent its conditional distribution nonparametrically by $F_{ir}(\cdot \mid \cF_r)$, where $\cF_r$ is the sales history available on that review day.
 The key input to the inventory policy is the $\alpha$-quantile of protection-interval demand:
 \begin{equation}\label{eq:quantile}
   \begin{aligned}
-    &\reduce{S_i^* = F_i^{-1}(\alpha \mid \cF_t) = \inf\{s \geq 0 : F_i(s \mid \cF_t) \geq \alpha\}.}\\
-    &\add{S_{ir}^* = F_{ir}^{-1}(\alpha \mid \cF_r) = \inf\{s \geq 0 : F_{ir}(s \mid \cF_r) \geq \alpha\}.}
+    &\\
+    &S_{ir}^* = F_{ir}^{-1}(\alpha \mid \cF_r) = \inf\{s \geq 0 : F_{ir}(s \mid \cF_r) \geq \alpha\}.
   \end{aligned}
 \end{equation}
 
 \subsection{Cost Structure}
 
-We consider two newsvendor cost structures.
+\reduce{We consider two newsvendor cost structures.}
+\add{In both evaluations, cost comprises a holding component, $h_i$, for inventory left after demand and a shortage component, $p_i$, for unmet demand. We consider two parameterizations of these components.}
 In the \emph{derived-cost} setting, the holding cost per unit per period is $h_i = \kappa_h \cdot c_i / M$, where $c_i$ is the unit cost, $\kappa_h$ is the annual holding-cost rate, and $M$ is the number of periods per year.
 The shortage cost is derived from the newsvendor critical ratio: $p_i = h_i \cdot \alpha / (1 - \alpha)$.
 In the \emph{margin-cost} setting, $p_i = \max(\text{price}_i - c_i, 0)$ is the unit margin, and $\alpha_i = p_i / (p_i + h_i)$ is the implied service level.
