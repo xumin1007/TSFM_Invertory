@@ -56,7 +56,8 @@ class ReplayResult:
 
 def replay(demand_path: np.ndarray, order_up_to: np.ndarray,
            initial_inventory: np.ndarray, cfg: ReplayConfig,
-           initial_pipeline_arrivals: np.ndarray | None = None) -> ReplayResult:
+           initial_pipeline_arrivals: np.ndarray | None = None,
+           order_lead_times: np.ndarray | None = None) -> ReplayResult:
     """运行连续回放。
 
     Parameters
@@ -69,6 +70,9 @@ def replay(demand_path: np.ndarray, order_up_to: np.ndarray,
         回放开始前已经承诺、并将在各相对日到货的数量。它们是所有候选政策
         共享的 sunk commitments；默认无在途订单。日程可以长于评价窗口，
         因为窗口外到货在窗口内仍属于库存位置的一部分。
+    order_lead_times : (n_series, n_reviews), optional
+        新订单的确定性、订单级提前期（天）。未提供时，所有新订单均使用
+        cfg.lead_time_days。
 
     Returns
     -------
@@ -90,6 +94,18 @@ def replay(demand_path: np.ndarray, order_up_to: np.ndarray,
     if order_up_to.shape != (n_ser, n_reviews):
         raise ValueError(
             f"order_up_to shape {order_up_to.shape} != expected ({n_ser}, {n_reviews})")
+    if order_lead_times is not None:
+        order_lead_times = np.asarray(order_lead_times, float)
+        if order_lead_times.shape != (n_ser, n_reviews):
+            raise ValueError(
+                "order_lead_times shape "
+                f"{order_lead_times.shape} != expected ({n_ser}, {n_reviews})")
+        rounded_lead_times = np.rint(order_lead_times)
+        if (np.any(~np.isfinite(order_lead_times))
+                or np.any(order_lead_times < 1)
+                or not np.array_equal(order_lead_times, rounded_lead_times)):
+            raise ValueError("order_lead_times must contain finite positive integers")
+        order_lead_times = rounded_lead_times.astype(int)
 
     # 状态矩阵
     i_begin = np.zeros((n_ser, n_days))
@@ -102,7 +118,9 @@ def replay(demand_path: np.ndarray, order_up_to: np.ndarray,
     order = np.zeros((n_ser, n_days))
 
     # 到货调度表：orders_arriving[t] = 在 day t 到货的量 (n_ser,)
-    schedule_days = n_days + L + 1
+    max_lead = (L if order_lead_times is None
+                else max(L, int(order_lead_times.max())))
+    schedule_days = n_days + max_lead + 1
     if initial_pipeline_arrivals is not None:
         initial_pipeline_arrivals = np.asarray(initial_pipeline_arrivals, float)
         if (initial_pipeline_arrivals.ndim != 2
@@ -154,10 +172,13 @@ def replay(demand_path: np.ndarray, order_up_to: np.ndarray,
             S = order_up_to[:, review_idx]
             ord_qty = np.clip(S - ip, 0.0, None)
             order[:, t] = ord_qty
-            # 到货在 t + L
-            arrival_day = t + L
-            if arrival_day < orders_arriving.shape[1]:
+            # 到货在 t + L；可选的订单级提前期覆盖固定 L。
+            if order_lead_times is None:
+                arrival_day = t + L
                 orders_arriving[:, arrival_day] += ord_qty
+            else:
+                arrival_day = t + order_lead_times[:, review_idx]
+                orders_arriving[np.arange(n_ser), arrival_day] += ord_qty
             cur_pipeline = cur_pipeline + ord_qty
             review_idx += 1
 

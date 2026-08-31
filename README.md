@@ -12,6 +12,7 @@ We evaluate whether the forecasting accuracy of time-series foundation models (T
 - **Chronos-2** reduces static high-service newsvendor cost by 12.21% relative to the origin-specific retuned empirical policy.
 - **Policy-dependent censoring** can favor a lower-stocking policy and can reverse policy rankings; known-truth experiments verify both the static and multi-cycle thresholds.
 - **Hidden-demand sensitivity** shows that the closed-loop advantage becomes statistically detectable after adding about 30% of the calibrated hidden-demand increment (14.6% of logged protection-interval sales).
+- **Promised-lead-time replay** replaces the common one-day arrival assumption with SKU-history schedules built only from pre-decision `normal_lead_time`; the logged-sales closed-loop point estimate changes from −3.46% to −3.92%, while both confidence intervals include zero.
 - A **5×5 service-level–recensoring grid** with familywise simultaneous inference identifies a discrete **conversion boundary**: four of 25 prespecified combinations satisfy the simultaneous conversion criterion.
 
 ## Dataset
@@ -73,6 +74,7 @@ src/f2d/                    # Core library
   run_ws4_kappa_margin.py   # Margin costs and SKU-specific critical ratios
   run_known_truth_censoring.py       # Static and multi-cycle ranking-reversal validation
   run_hidden_demand_threshold.py     # Hidden-demand break-even sensitivity
+  run_zhao_normal_lead_time_replay.py # No-future-information promised-lead-time replay
   audit_*.py                # Audit scripts
 
 artifacts/                  # Experiment outputs
@@ -86,6 +88,7 @@ artifacts/                  # Experiment outputs
   zhao_review_robustness/   # Distribution, tail, and support-cap audits
   known_truth_censoring/    # Known-truth censoring and ranking-reversal results
   zhao_hidden_demand_threshold/  # Static lower bound and closed-loop thresholds
+  zhao_normal_lead_time_replay/  # SKU-history promised-lead-time replay
 
 paper/
   main.tex                  # MSOM paper source
@@ -193,6 +196,22 @@ Threshold intervals jointly resample SKU clusters and latent-demand draw IDs.
 The reconstructed demand is used only to evaluate fixed policies; it is not
 used to refit a forecasting model or construct a new policy.
 
+## Reproducing the Promised-Lead-Time Replay
+
+After running `f2d.run_halfsynthetic` to create the frozen policy targets, run:
+
+```bash
+PYTHONPATH=src python -m f2d.run_zhao_normal_lead_time_replay \
+  --n-draws 50 \
+  --b 10000
+```
+
+For each SKU and review day, the script samples from `normal_lead_time` values
+on orders placed strictly before that day; it never uses `arrival_date`. The
+same sampled schedule is applied to every policy arm, while policy targets and
+the logged-sales demand path remain fixed. Outputs are written to
+[`artifacts/zhao_normal_lead_time_replay/`](artifacts/zhao_normal_lead_time_replay/).
+
 Run the focused checks with:
 
 ```bash
@@ -207,6 +226,7 @@ PYTHONPATH=src pytest -q \
 |---|---|
 | Static high-service cost reduction (Chronos-2 vs. Emp-retuned) | 12.21% |
 | Dynamic replay point estimate under logged sales | 3.46% cost reduction |
+| SKU-history promised-lead-time replay | 3.92% cost reduction (95% CI: −11.02 to +5.59) |
 | Demand-measure DiD (empirical-conditional generator) | −8.28 pp (95% CI: −17.22 to −4.23) |
 | Known-truth censoring check | Lower-stock bias in static and multi-cycle designs; both designs cross a ranking-reversal threshold |
 | Static decision-relevant hidden-demand lower bound | 229.16 units total; 0.0404 per SKU-origin (0.074% of logged protection-interval sales) |

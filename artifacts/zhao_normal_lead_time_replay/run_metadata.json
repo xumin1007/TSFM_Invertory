@@ -1,0 +1,14 @@
+{
+  "lead_time_source": "normal_lead_time",
+  "history_rule": "order_date < review_date",
+  "arrival_date_used": false,
+  "zero_day_mapping": "0-day promised lead time is mapped to 1 day",
+  "common_random_numbers_across_arms": true,
+  "n_series": 1135,
+  "n_review_dates": 13,
+  "n_lead_time_draws": 50,
+  "bootstrap_replicates": 10000,
+  "fixed_policy_targets": true,
+  "demand_input": "logged sales",
+  "seed": 42
+}

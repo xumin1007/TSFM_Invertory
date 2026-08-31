@@ -118,19 +118,20 @@ Time series foundation models (TSFMs) offer probabilistic demand forecasts witho
 \smallskip\noindent\textbf{Methodology/results:}
 \reduce{We compare three TSFMs with statistical, machine-learning, and decision-focused baselines on two retail datasets and embed their forecasts in static newsvendor and closed-loop base-stock evaluations.}\add{We compare three TSFMs with statistical, machine-learning, and decision-focused baselines on two retail datasets and evaluate the resulting policies using static newsvendor cost and closed-loop replay over multiple replenishment cycles.}
 \reduce{Zero-shot Chronos-2 delivers a model-specific upper-tail advantage: on a common-support, high-service sample, it reduces static cost by 12.21\% relative to a retuned empirical policy.}\add{On a common-support, high-service sample, zero-shot Chronos-2 reduces static newsvendor cost by 12.21\% relative to a retuned empirical policy.}
-Under logged censored sales, this advantage falls to 3.46\% in a continuous carry-state replay, an attenuation of 8.75 percentage points.
-A paired semi-synthetic experiment holds policies fixed and replaces logged sales with latent demand.
-\reduce{The dynamic advantage then becomes 11.12\%, while attenuation falls to 0.47 percentage points; the difference-in-differences is $-8.28$ percentage points ($p<0.001$).}\add{The closed-loop replay advantage then becomes 11.12\%, while attenuation falls to 0.47 percentage points; the difference-in-differences is $-8.28$ percentage points ($p<0.001$).}
-\add{The advantage becomes statistically detectable after adding approximately 30\% of the calibrated hidden-demand increment, equivalent to 14.6\% of logged protection-interval sales.}
-The demand-measure wedge remains negative under Poisson and negative-binomial latent-demand generators, and alternative quantile-to-distribution mappings leave the baseline attenuation essentially unchanged.
-Within this factorial, an exact cost bridge attributes 98\% of the differential evaluation bias to shortage-cost measurement.
-\add{Two propositions characterize the static and closed-loop censoring wedges and their exact ranking-reversal thresholds. Known-truth simulations cross those thresholds; the retail application shows compression but no reversal.}
-At the two operational service levels, Chronos-2 attains 3.6--4.2 percentage points higher realized protection-interval coverage than the empirical policy under both logged sales and latent demand.
-\reduce{Finally, a prespecified service-level--recensoring grid provides simultaneous evidence for both the static and dynamic advantages at four of 25 evaluated combinations.}\add{A service-level--recensoring grid simultaneously confirms both cost advantages at four of 25 evaluated points.}
+\reduce{Under logged censored sales, this advantage falls to 3.46\% in a continuous carry-state replay, an attenuation of 8.75 percentage points.}\add{Under logged censored sales, Chronos-2's cost advantage is 3.46\% when the policies are evaluated over repeated replenishment cycles, and this estimate is not statistically distinguishable from zero.}
+\reduce{A paired semi-synthetic experiment holds policies fixed and replaces logged sales with latent demand.}\add{A paired experiment holds policies fixed and adds reconstructed unmet demand to logged sales.}
+\reduce{The dynamic advantage then becomes 11.12\%, while attenuation falls to 0.47 percentage points; the difference-in-differences is $-8.28$ percentage points ($p<0.001$).}\reduce{The closed-loop replay advantage then becomes 11.12\%, while attenuation falls to 0.47 percentage points; the difference-in-differences is $-8.28$ percentage points ($p<0.001$).}\add{When the same policies are evaluated after adding reconstructed unmet demand, the advantage increases to 11.12\%. The difference between the logged-sales and reconstructed-demand comparisons remains statistically significant after accounting for the corresponding single-decision evaluations ($p<0.001$).}
+\reduce{The advantage becomes statistically detectable after adding approximately 30\% of the calibrated hidden-demand increment, equivalent to 14.6\% of logged protection-interval sales.}\reduce{When we increase the amount of reconstructed unmet demand while holding both policies fixed, the advantage becomes statistically detectable after adding approximately 30\% of the total reconstructed amount, equivalent to 14.6\% of logged protection-interval sales.}\add{When we increase the amount of reconstructed unmet demand while holding both policies fixed, the advantage becomes statistically detectable after adding approximately 30\% of the total reconstructed amount, equivalent to 14.6\% of logged demand over the evaluated replenishment horizons.}
+\reduce{The demand-measure wedge remains negative under Poisson and negative-binomial latent-demand generators, and alternative quantile-to-distribution mappings leave the baseline attenuation essentially unchanged.}\add{The change remains statistically detectable under two alternative methods for reconstructing unmet demand, while alternative mappings from forecast quantiles to demand distributions leave the result essentially unchanged.}
+\reduce{Within this factorial, an exact cost bridge attributes 98\% of the differential evaluation bias to shortage-cost measurement.}\add{Decomposing the cost difference shows that understated shortage cost accounts for 98\% of the change in the measured advantage.}
+\reduce{Two propositions characterize the static and closed-loop censoring wedges and their exact ranking-reversal thresholds. Known-truth simulations cross those thresholds; the retail application shows compression but no reversal.}\add{Two propositions give exact conditions under which censored-sales evaluation favors lower stock or reverses a policy ranking. Simulations in which underlying demand is fully observed confirm that reversal is possible; the retail application shows compression but no reversal.}
+\reduce{At the two operational service levels, Chronos-2 attains 3.6--4.2 percentage points higher realized protection-interval coverage than the empirical policy under both logged sales and latent demand.}\add{At the 95\% and 98\% service targets, Chronos-2 covers demand in 3.6--4.2 percentage points more replenishment horizons than the empirical policy under both logged and reconstructed demand.}
+\reduce{Finally, a prespecified service-level--recensoring grid provides simultaneous evidence for both the static and dynamic advantages at four of 25 evaluated combinations.}\reduce{A service-level--recensoring grid simultaneously confirms both cost advantages at four of 25 evaluated points.}\add{Across 25 combinations of service targets and assumed censoring levels, both the static and closed-loop cost advantages are simultaneously supported at four combinations.}
 %
 \smallskip\noindent\textbf{Managerial implications:}
-The evidence favors deploying Chronos-2 in high-service settings and evaluating it with demand measures that recover unmet demand rather than logged sales alone.
-The grid maps how its measured inventory value varies with service targets and demand-measurement quality in the evaluated design.
+\reduce{The evidence favors deploying Chronos-2 in high-service settings and evaluating it with demand measures that recover unmet demand rather than logged sales alone.
+The grid maps how its measured inventory value varies with service targets and demand-measurement quality in the evaluated design.}
+\add{The results caution against evaluating inventory policies using censored sales alone. When sales may be limited by stock availability, availability records and sensitivity analyses over plausible unmet demand can provide a more reliable comparison.}
 }
 
 %\FUNDING{This research was supported by [grant number, funding agency].}
@@ -163,39 +164,35 @@ That distinction matters for two reasons. First, aggregate forecast metrics aver
 
 Retail transaction data create a further evaluation problem. When stock is unavailable, observed sales can fall below underlying demand, causing logged-sales evaluation to understate shortage costs. Because a lower-stocking policy incurs shortages over a wider range of demand, censoring can hide more of its shortage cost. Thus, even on the same logged-sales path, evaluation can be biased toward the lower-stocking policy, compressing or even reversing the true cost difference.
 
-These considerations motivate two operational questions. First, when do the probabilistic forecasts produced by TSFMs yield lower inventory cost than benchmark forecasting methods, particularly at high service levels? Second, how large is this inventory-cost advantage over repeated replenishment cycles, and when can censored sales compress or reverse the measured policy comparison?
+These considerations motivate two operational questions. First, when do the probabilistic forecasts produced by TSFMs yield lower inventory cost than benchmark forecasting methods, particularly at high service levels? Second, how does this advantage change over repeated replenishment cycles, and under what conditions can censored-sales evaluation distort or reverse a policy comparison?
 
 We study these questions using two retail datasets with complementary demand environments. Our primary source is the offline-retail dataset documented by \citet{ZhaoEtAl2020}, which links transactions, inventory, replenishment, products, and in-store displays at a large Chinese supermarket.  In our analysis sample of 2{,}000 SKUs, 68\% of daily observations are zeros, and observed sales may be censored by inventory. The complementary OSA retail-store benchmark, released by Tredence \citep{TredenceOSAData2021}, contains 100 consumer-goods store--SKU series with uncensored demand and longer replenishment lead times.
-We evaluate Amazon’s Chronos-2 \citep{Ansari2025Chronos2}, Google’s TimesFM-2.5 \citep{TimesFM2024}, and Salesforce’s Moirai-1.1 \citep{Moirai2024} against an empirical-quantile benchmark and representative machine-learning, deep-learning, and decision-focused methods.
+
+We evaluate Amazon’s Chronos-2 \citep{Ansari2025Chronos2}, Google’s TimesFM-2.5 \citep{TimesFM2024}, and Salesforce’s Moirai-1.1 \citep{Moirai2024} against an empirical policy based on historical sales and representative machine-learning, deep-learning, and decision-focused methods.
 % against empirical quantiles, gradient-boosted quantile regression \citep{KeEtAl2017}, task-specific deep forecasters including DeepAR and TFT \citep{Salinas2020DeepAR,LimEtAl2021}, and decision-focused newsvendor methods including ERM and DDM \citep{BanRudin2019,ShiChenDuenyas2016}.
-Our forecast-to-decision pipeline converts daily forecast quantiles into approximate predictive demand distributions and aggregates them over the protection interval to determine target inventory levels. We first evaluate the resulting policies using a static newsvendor evaluation, which measures holding and shortage cost over demand until an order placed at the next review can arrive, without carrying the resulting inventory state into the next decision. We then use closed-loop replay over multiple replenishment cycles, which carries inventory states forward so that each decision affects subsequent ones.
-
-\add{Our first finding is that inventory value varies across TSFMs and depends on the accuracy of the upper demand quantiles used to set stock targets. Among methods using only SKU-level sales histories, Chronos-2 achieves the strongest probabilistic forecasts and the lowest static newsvendor cost, whereas TimesFM-2.5 and Moirai-1.1 do not consistently outperform the empirical-quantile benchmark. Forecast rankings alone are insufficient: gradient-boosted quantile regression slightly improves aggregate quantile-forecast accuracy but raises inventory cost by overstating the upper quantiles that determine stock targets. At the prespecified 95\% and 98\% service targets, zero-shot Chronos-2 reduces static newsvendor cost by 12.21\% relative to the empirical-quantile benchmark.}
+Our forecast-to-decision pipeline converts daily forecast quantiles into approximate demand distributions over the protection interval and uses them to set target inventory levels. We evaluate each policy in two complementary ways: static newsvendor cost for one protection interval at a time, and closed-loop replay over multiple replenishment cycles, where each replenishment decision changes the inventory available for subsequent decisions.
 
 
-\add{Our second finding is that censored sales can substantially understate the relative inventory value of Chronos-2 because the resulting measurement error differs across policies. Under logged sales, its 12.21\% static newsvendor cost advantage becomes a 3.46\% closed-loop replay cost advantage that is not statistically distinguishable from zero. When the same fixed policies are evaluated on semi-synthetic latent demand, the closed-loop advantage increases to 11.12\%. The cost bridge shows that censored sales understate shortage cost more for the lower-stocking empirical policy, compressing but not reversing Chronos-2's point-estimate advantage in the retail application. A pathwise static result characterizes the bias through the overlap between hidden demand and the policies' stock targets, while an exact closed-loop bridge gives the corresponding ranking-reversal threshold. Known-truth simulations show that this threshold can be crossed. Importantly, latent demand is used here to evaluate fixed policies; we do not use reconstructed demand to refit the forecasters or generate new policies.}
-\add{A scaling sensitivity further shows that the closed-loop advantage becomes statistically detectable after adding approximately 30\% of the calibrated hidden-demand increment, or 14.6\% of logged protection-interval sales. This is a break-even sensitivity result, not an estimate of true unmet demand.}
+Our first finding is that inventory value varies across TSFMs and depends on the accuracy of the upper demand quantiles used to set stock targets. Among methods using only SKU-level sales histories, Chronos-2 achieves the strongest probabilistic forecasts and the lowest static newsvendor cost, whereas TimesFM-2.5 and Moirai-1.1 do not consistently outperform the empirical policy. Forecast rankings alone are insufficient. Gradient-boosted quantile regression slightly improves aggregate quantile-forecast accuracy but raises inventory cost by overstating the upper quantiles that determine stock targets. At the prespecified 95\% and 98\% service targets, zero-shot Chronos-2 reduces static newsvendor cost by 12.21\% relative to the empirical policy.
 
+Our second finding is that demand censoring materially changes the comparison between zero-shot Chronos-2 and the empirical policy. Here, unobserved unmet demand means customer demand that is not recorded as sales because inventory is unavailable. 
+Under logged sales, Chronos-2's closed-loop cost advantage is 3.46\% and is not statistically distinguishable from zero. While adding a reconstruction of the unmet demand increases the point estimate to 11.12\%. The reconstructed demand is used only for evaluation, not for model training.
+Our analytical results show when omitting this demand favors the lower-stocking policy and when the resulting bias is large enough to reverse the policy ranking. Simulations in which underlying demand is fully observed confirm that reversal is possible. In the retail application, censoring compresses but does not reverse the point-estimate ranking. 
+As we gradually add reconstructed unmet demand, the closed-loop advantage becomes statistically detectable after adding approximately 30\% of the total reconstructed amount, or 14.6\% of logged protection-interval sales. This calculation describes the sensitivity of the policy comparison; it does not estimate actual unmet demand.
 
 \subsection{Contributions}
 
 This paper makes two contributions.
 
+First, we provide a decision-layer benchmark for TSFMs. The framework maps probabilistic forecasts into protection-interval stock targets and compares the resulting policies both decision by decision and over multiple replenishment cycles. It thereby evaluates forecast accuracy and inventory cost within a common operational pipeline.
 
+Second, we characterize how censored sales alter inventory-policy evaluation. We derive exact static and closed-loop ranking conditions, verify through simulations with fully observed demand that censoring can reverse a ranking, and quantify how the focal retail comparison changes as the assumed amount of unmet demand varies.
 
-\reduce{First, we extend TSFM evaluation from predictive accuracy to inventory value. Our common framework maps probabilistic forecasts into protection-interval stock targets and compares policies in independent and multi-cycle replenishment settings.}
-\add{First, we provide a decision-layer benchmark for TSFMs. The framework maps probabilistic forecasts into protection-interval stock targets and compares the resulting policies both decision by decision and over multiple replenishment cycles. It thereby evaluates forecast accuracy and inventory cost within a common operational pipeline.}
-
-
-\reduce{Second, we develop an evaluation framework for multi-cycle inventory policies when demand is censored by stock availability. It separates effects due to inventory dynamics from those due to demand measurement and identifies demand observability as an integral part of policy evaluation.}
-\add{Second, we characterize policy-dependent censoring bias in inventory evaluation. We derive an exact static ranking condition and an exact decomposition of the corresponding closed-loop wedge. Known-truth simulations demonstrate the possibility of ranking reversal, while the fixed-policy retail experiment estimates the wedge's empirical magnitude and separates it from inventory dynamics.}
-
-\reduce{For managers, the results support selective piloting rather than wholesale replacement. In the evaluated high-service settings, Chronos-2 delivers its clearest inventory-cost advantage when unmet demand is observed or credibly reconstructed. When policy evaluation relies on transaction logs, retailers could supplement sales with stockout flags or availability records and assess robustness to credible latent-demand reconstructions.}
-\add{For managers, the results support selective piloting rather than wholesale replacement. In the evaluated high-service settings, Chronos-2 lowers static newsvendor cost, while transaction logs materially understate its closed-loop point-estimate advantage. Retailers evaluating such policies could supplement sales with stockout flags or availability records and test whether conclusions are robust to credible latent-demand reconstructions. This recommendation concerns reliable policy evaluation; the paper does not test whether feeding reconstructed demand back into the forecasting model produces additional savings.}
+For managers, the results show that policy comparisons based only on logged sales may be incomplete when sales are limited by stock availability. Retailers could supplement sales with availability records and examine whether conclusions remain unchanged under plausible amounts of unmet demand. The paper uses reconstructed demand only to evaluate unchanged policies and does not test retraining forecasting models on reconstructed demand.
 
 The remainder of the paper is organized as follows.
 Section~\ref{sec:lit} reviews related work.
-\reduce{Section~\ref{sec:setting} describes the problem setting and notation.}\add{Section~\ref{sec:setting} defines the problem and presents the analytical results on policy evaluation under censored demand.}
+Section~\ref{sec:setting} defines the problem and presents the analytical results on policy evaluation under censored demand.
 Section~\ref{sec:method} details our forecast-to-decision methodology.
 Section~\ref{sec:data} describes the datasets.
 Section~\ref{sec:results} presents the main results.
@@ -279,45 +276,39 @@ A model that improves median accuracy but miscalibrates the 95th percentile may 
 
 
 % ============================================================
-\section{\reduce{Problem Setting}\add{Problem Setting and Analytical Results}}\label{sec:setting}
+\section{Problem Setting and Analytical Results}\label{sec:setting}
 % ============================================================
 
-We consider a retailer managing $N$ SKUs under periodic review with base-stock replenishment---a widely used inventory policy in both theory and practice.
-Each SKU $i$ is reviewed every $R$ days with a replenishment lead time of $L_i$ days, yielding a protection interval of $\text{PI}_i = R + L_i$ days.
-\reduce{At each review point, the retailer observes the inventory position $\text{IP}_i$ (ending on-hand plus outstanding on-order inventory) and places an order to bring the position up to a base-stock level $S_i$.
-The order quantity is $\max(0, S_i - \text{IP}_i)$.
-The replay uses a pure lost-sales convention with no backlog: scheduled arrivals are received before same-day demand, fulfillment is $\min(d_{it},I^{\mathrm{avail}}_{it})$, and any unfilled demand exits the system that day.
-On review days the order is placed after fulfillment, so $\text{IP}_{it}=I^{\mathrm{end}}_{it}+O^{\mathrm{open}}_{it}$, where $O^{\mathrm{open}}_{it}$ is the pre-order pipeline still outstanding at that instant.}
-\add{The replay uses a pure lost-sales convention with no backlog. Within each day, scheduled orders arrive before demand, demand is then fulfilled, and any unfilled demand exits the system; on review days, replenishment occurs after fulfillment. Table~\ref{tab:inventory-state-notation} defines the resulting inventory states and decisions.}
+We consider a retailer managing $N$ SKUs under periodic review with a base-stock (order-up-to) replenishment policy, a standard inventory-control rule \citep{Porteus2002}.
+\reduce{Each SKU $i$ is reviewed every $R$ days with a replenishment lead time of $L_i$ days, yielding a protection interval of $\text{PI}_i = R + L_i$ days.}\add{Each SKU $i$ is reviewed every $R$ days with a deterministic replenishment lead time of $L_i$ days, held fixed across its orders, yielding a protection interval of $\text{PI}_i = R + L_i$ days.}
+We use a lost-sales system, where unmet demand leaves the system rather than backlogging. On day $t$, units ordered earlier and scheduled to arrive that day are received first. Together with the on-hand inventory carried into the day, they form the available inventory $I^{\mathrm{avail}}_{it}$. Let $D_{it}$ denote underlying (true) demand, observed sales then are $Y_{it}=\min\{D_{it},I^{\mathrm{avail}}_{it}\}$, leaving $I^{\mathrm{end}}_{it}=(I^{\mathrm{avail}}_{it}-D_{it})^+$ remaining units and $\mathrm{Lost}_{it}=(D_{it}-I^{\mathrm{avail}}_{it})^+$ lost units. On review days, after fulfillment, the retailer observes $\mathrm{IP}_{it}=I^{\mathrm{end}}_{it}+O^{\mathrm{open}}_{it}$, where $O^{\mathrm{open}}_{it}$ denotes the total units ordered earlier that have not yet arrived, and places $Q_{it}=(S_{it}-\mathrm{IP}_{it})^+$ to the target $S_{it}$. Table~\ref{tab:inventory-state-notation} summarizes this notation and timing.
 
 \begin{table}[ht]
-\caption{\add{Inventory-state notation and within-day timing in the closed-loop replay.}}\label{tab:inventory-state-notation}
+\caption{Inventory-state notation for the closed-loop replay.}\label{tab:inventory-state-notation}
 \centering\small
-\add{%
-\begin{tabular}{@{}>{\raggedright\arraybackslash}p{0.18\textwidth}>{\raggedright\arraybackslash}p{0.49\textwidth}>{\raggedright\arraybackslash}p{0.24\textwidth}@{}}
+%
+\begin{tabular}{@{}>{\raggedright\arraybackslash}p{0.23\textwidth}>{\raggedright\arraybackslash}p{0.72\textwidth}@{}}
 \toprule
-\textbf{Symbol} & \textbf{Definition} & \textbf{Timing} \\
+\textbf{Symbol} & \textbf{Definition} \\
 \midrule
-$d_{it}$ & Realized demand for SKU $i$ on day $t$ under the demand measure used for evaluation & During fulfillment \\
-$I^{\mathrm{avail}}_{it}$ & On-hand inventory available to meet demand & After scheduled arrivals, before demand \\
-$I^{\mathrm{end}}_{it}$ & Ending on-hand inventory, $(I^{\mathrm{avail}}_{it}-d_{it})^+$ & After fulfillment \\
-$\mathrm{Lost}_{it}$ & Unmet demand, $(d_{it}-I^{\mathrm{avail}}_{it})^+$ & After fulfillment \\
-$O^{\mathrm{open}}_{it}$ & Previously ordered units that remain outstanding & Before the new order \\
-$\mathrm{IP}_{it}$ & Inventory position, $I^{\mathrm{end}}_{it}+O^{\mathrm{open}}_{it}$ & At the replenishment decision \\
-$S_{it}$ & Base-stock level, i.e., the target inventory position & At the replenishment decision \\
-$Q_{it}$ & New order quantity, $(S_{it}-\mathrm{IP}_{it})^+$ & After the replenishment decision \\
+$D_{it}$ & Underlying (true) demand for SKU $i$ on day $t$ \\
+$Y_{it}$ & Logged sales, $\min\{D_{it},I^{\mathrm{avail}}_{it}\}$ \\
+$I^{\mathrm{avail}}_{it}$ & On-hand inventory after previously ordered units scheduled for day $t$ arrive \\
+$I^{\mathrm{end}}_{it}$ & Ending on-hand inventory, $(I^{\mathrm{avail}}_{it}-D_{it})^+$ \\
+$\mathrm{Lost}_{it}$ & Unmet demand, $(D_{it}-I^{\mathrm{avail}}_{it})^+$ \\
+$O^{\mathrm{open}}_{it}$ & Units ordered earlier that have not yet arrived \\
+$\mathrm{IP}_{it}$ & Inventory position, $I^{\mathrm{end}}_{it}+O^{\mathrm{open}}_{it}$ \\
+$S_{it}$ & Base-stock level, i.e., the target inventory position \\
+$Q_{it}$ & New order quantity, $(S_{it}-\mathrm{IP}_{it})^+$ \\
 \bottomrule
-\end{tabular}}
+\end{tabular}
 \end{table}
-
-While we focus on the base-stock policy throughout, the forecast-to-decision pipeline we develop---which converts probabilistic daily forecasts into a protection-interval demand distribution---is applicable to any policy that requires quantile estimates of lead-time demand.
 
 \subsection{Demand Model}
 
-Let $d_{i,t} \geq 0$ denote the daily demand for SKU $i$ on day $t$.
-The \emph{protection-interval demand} is the cumulative demand over the next $\text{PI}_i$ days:
+\reduce{Let $d_{i,t} \geq 0$ denote the daily demand for SKU $i$ on day $t$. The \emph{protection-interval demand} is the cumulative demand over the next $\text{PI}_i$ days:}\add{The \emph{protection-interval demand} is the cumulative underlying demand over the next $\text{PI}_i$ days:}
 \begin{equation}\label{eq:pi_demand}
-  D_i^{\text{PI}} = \sum_{t=1}^{\text{PI}_i} d_{i,t}.
+  D_i^{\text{PI}} = \sum_{t=1}^{\text{PI}_i} D_{i,t}.
 \end{equation}
 
 We represent the demand distribution nonparametrically through the conditional cumulative distribution function $F_i(\cdot \mid \cF_t)$, where $\cF_t$ denotes the information set (sales history) available at the review point.
@@ -745,7 +736,7 @@ Electronic Companion Section~EC.2 reports the complete margin-cost comparison.
 
 \subsection{Cross-Dataset Consistency (OSA)}
 
-The OSA dataset provides a complementary directional check in consumer goods with uncensored demand and longer lead times (7--21 days).
+\reduce{The OSA dataset provides a complementary directional check in consumer goods with uncensored demand and longer lead times (7--21 days).}\add{The OSA dataset provides a complementary directional check in consumer goods with uncensored demand. We run three separate counterfactual scenarios with fixed lead times of $L\in\{7,14,21\}$ days; within each scenario, every new order arrives exactly $L$ days after placement.}
 At $L = 7$, $\alpha = 0.90$, the zero-shot TSFM achieves a prediction-layer NPL of 0.108, compared to 0.261 for the empirical method---a 59\% improvement.
 On the decision layer, Chronos-2 achieves lower cost than the empirical baseline at the examined operating points, with the point-estimate advantage growing at longer lead times.
 At $L = 7$ and $\alpha = 0.90$ (P2 policy), Chronos-2's cost is 42.49 versus 60.34 for the empirical method, a 30\% reduction.
@@ -830,6 +821,8 @@ On each review day, arm $a$ orders
 \add{Q^a_{it}=(S^a_{it}-\mathrm{IP}^a_{it})^+=(S^a_{it}-I^{a,\mathrm{end}}_{it}-O^{a,\mathrm{open}}_{it})^+,}
 \]
 the order enters that arm's arrival schedule at $t+L$, and subsequent inventory is driven by the arm's own order history.
+\add{In the Chinese-supermarket replay, $L_i=1$ for every SKU: all new orders arrive deterministically one day after placement. This is therefore a counterfactual policy simulation, rather than a reconstruction of each historical order's realized arrival time.}
+\add{As a supply-side robustness check, we also assign each simulated new order an SKU-specific promised lead time drawn from \texttt{normal\_lead\_time} values on orders placed before its review day. The policy targets remain fixed at their one-day values, isolating the effect of arrival timing; Electronic Companion Section~EC.3 gives the no-future-information construction.}
 After the origin, each arm uses its own generated purchase orders; pre-origin commitments supply the arm-common initial pipeline.
 We distinguish a \emph{short-run switching estimand}---each month starts from the logged on-hand state and an arm-common pre-existing pipeline---from a \emph{long-run policy estimand}, in which each arm carries its on-hand and pipeline states continuously across months and the warm-up months initialize the scored state path.
 
@@ -852,6 +845,7 @@ Carry-state attenuation & $+8.75$ pp & $[+3.47,+19.54]$ \\
 
 From the 1{,}836-series common-support manifest, 1{,}135 series have finite unit-cost inputs and are therefore eligible for cost analysis (origins~3--7). \reduce{On this predeclared sample, Chronos-2 reduces the static high-service-level loss by 12.21\% (95\% CI: 5.59\%--19.00\%).}\add{On this predeclared sample, Chronos-2 reduces static newsvendor cost at the high service levels by 12.21\% (95\% CI: 5.59\%--19.00\%).}
 This advantage falls to 6.57\% in the monthly-reset switch replay and to 3.46\% in the continuous carry-state replay; both point estimates favor Chronos-2, while their confidence intervals span zero.
+\add{Replacing the common one-day arrival assumption with 50 common, SKU-history promised-lead-time schedules changes the carry-state estimate from $-3.46\%$ to $-3.92\%$ (95\% CI: $-11.02$ to $+5.59$). The $-0.45$-percentage-point difference has a 95\% interval of $[-1.07,-0.19]$, but the policy-comparison interval continues to include zero.}
 \reduce{Relative to the static benchmark, the attenuation equals 5.65 percentage points under the switch estimand (95\% CI: 2.18--12.92, $p<0.001$) and 8.75 percentage points under the carry-state estimand (95\% CI: 3.47--19.54, $p<0.001$), with both attenuation effects statistically significant.}\add{Relative to the static newsvendor cost benchmark, the attenuation equals 5.65 percentage points under the switch estimand (95\% CI: 2.18--12.92, $p<0.001$) and 8.75 percentage points under the carry-state estimand (95\% CI: 3.47--19.54, $p<0.001$), with both attenuation effects statistically significant.}
 The carry-state replay attenuates 3.10 percentage points more than the switch replay (95\% CI: 0.10--8.36, $p=0.040$).
 \reduce{Carrying policy-specific inventory states across periods therefore sharpens the central operational question: why does a sizable static advantage translate only weakly when policy value is measured on observed sales?}\add{Carrying policy-specific inventory states across periods therefore sharpens the central operational question: why does a sizable static newsvendor cost advantage translate only weakly when policy value is measured on observed sales?}

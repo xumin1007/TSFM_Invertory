@@ -59,7 +59,7 @@ Time Series Foundation Models under Censored Sales''\par}
 \noindent\textbf{Companion roadmap.}
 Section~EC.1 reports every point estimate and simultaneous interval from the service-level--recensoring grid.
 Section~EC.2 collects the supporting decision-layer, economic-sensitivity, fine-tuning, short-history, and censored-learning results.
-Section~EC.3 reports the latent-demand-generator, protection-interval-dependence, PMF-reconstruction, support-cap binding and sensitivity, and operational-tail-calibration checks added for distributional robustness.
+\reduce{Section~EC.3 reports the latent-demand-generator, protection-interval-dependence, PMF-reconstruction, support-cap binding and sensitivity, and operational-tail-calibration checks added for distributional robustness.}\add{Section~EC.3 reports promised-lead-time, latent-demand-generator, protection-interval-dependence, PMF-reconstruction, support-cap binding and sensitivity, and operational-tail-calibration checks added for distributional robustness.}
 \reduce{Section~EC.4 proves both policy-dependent censoring propositions and reports known-truth static and closed-loop simulations.}\add{Section~EC.4 reports the hidden-demand threshold sensitivity, and Section~EC.5 proves both policy-dependent censoring propositions and reports known-truth static and closed-loop simulations.}
 \reduce{The main paper's Semi-Synthetic Censoring Experiment presents the cost bridge in three consecutive steps: the exact bridge identity, arm-level total/holding/shortage costs, and component-wise two-way-bootstrap intervals.}\add{The main paper states the two general propositions in Section~3 and presents the empirical cost bridge in the Semi-Synthetic Censoring Experiment through the bridge identity, arm-level total/holding/shortage costs, and component-wise two-way-bootstrap intervals.}
 \reduce{This placement keeps the mechanism derivation adjacent to the principal $2\times2$ result, while the companion supplies the full robustness detail and grid cells used to audit it.}\add{This placement keeps the empirical decomposition adjacent to the principal $2\times2$ result, while Section~EC.5 supplies the proofs and known-truth validations.}
@@ -414,6 +414,39 @@ This section reports the checks that support the semi-synthetic and protection-i
 All analyses retain the same 1{,}135 cost-eligible series, five scored origins, two high service levels, origin-specific retuned empirical comparators, and fixed policy support.
 \reduce{The exact cost-bridge identity, arm-level total/holding/shortage costs, and component-wise bridge intervals are grouped together in the main paper's ``Semi-Synthetic Censoring Experiment'' subsection (Tables ``Arm-level dynamic-cost bridge'' and ``Holding/shortage decomposition'').}\add{The exact cost-bridge identity, arm-level total/holding/shortage costs, and component-wise bridge intervals are grouped together in the main paper's ``Semi-Synthetic Censoring Experiment'' subsection (Tables ``Arm-level closed-loop replay cost bridge'' and ``Holding/shortage decomposition'').}
 These quantities identify a fixed-policy measurement contrast on the \reduce{Zhao}\add{Chinese-supermarket} common support: the 98\% bridge is the exact accounting share within that factorial, while the OSA evidence is a separate directional cross-dataset check.
+
+\subsection{\add{Promised Lead-Time Replay}}\label{oa:promised-lead-time}
+
+\add{The main Chinese-supermarket replay assigns every new order a fixed one-day lead time. To assess that assumption without using future information, we hold every forecast-induced stock target fixed and replace only the arrival schedule. At each review day $t$, we draw the lead time for SKU $i$ from the empirical distribution of \texttt{normal\_lead\_time} among its orders placed strictly before $t$:}
+\[
+\add{L_{it}\sim\widehat F_{i,t}^{\mathrm{promise}},
+\qquad
+\widehat F_{i,t}^{\mathrm{promise}}
+=\frac{1}{|\mathcal H_{i,t}|}
+\sum_{o\in\mathcal H_{i,t}}\delta_{\ell_o},
+\quad
+\mathcal H_{i,t}=\{o:\mathrm{SKU}_o=i,\ \mathrm{order\_date}_o<t\}.}
+\]
+\add{All 1{,}135 SKUs have nonempty own-SKU histories at each of the 13 review dates, so no pooled fallback is used. The source's 0-day promised lead times are mapped to one day because the replay receives arrivals before placing new orders; this is the shortest feasible arrival under the model's daily sequence. The actual \texttt{arrival\_date} field is never used. Thus, this check represents heterogeneity in promised lead times, not uncertainty in delivery relative to a promise.}
+
+\add{We generate 50 schedules using SHA-256 seeds keyed by SKU and review date and apply the same schedule to every policy arm within a draw. Across review dates, the mean effective lead time is 1.78 days, its 90th percentile is four days, and the largest sampled value is eight days. Confidence intervals jointly resample the 1{,}135 SKU clusters and the 50 lead-time schedules.}
+
+\begin{table}[htbp]
+\centering
+\caption{\add{Closed-loop replay under fixed and SKU-history promised lead times. Effects are relative costs of zero-shot Chronos-2 versus the origin-specific empirical policy; negative values favor Chronos-2. Stock targets and logged-sales demand paths are held fixed. Intervals are 95\% two-way bootstrap intervals over SKU clusters and lead-time schedules.}}\label{tab:oa-promised-lead-time}
+\small
+\begin{tabular}{lrrr}
+\toprule
+\textbf{Arrival schedule} & \textbf{Effect (\%)} & \textbf{95\% CI} & \textbf{$p$} \\
+\midrule
+\add{Fixed one-day lead time} & \add{$-3.46$} & \add{$[-10.71,+6.40]$} & \add{0.570} \\
+\add{SKU-history promised lead time} & \add{$-3.92$} & \add{$[-11.02,+5.59]$} & \add{0.493} \\
+\add{Difference (promised $-$ fixed), pp} & \add{$-0.45$} & \add{$[-1.07,-0.19]$} & \add{$<0.001$} \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\add{The variable-arrival schedule makes the estimated advantage 0.45 percentage points more negative, but its cost-effect interval still includes zero. The main conclusion about the limited detectability of the logged-sales policy comparison is therefore unchanged. The reproducible implementation is \texttt{src/f2d/run\_zhao\_normal\_lead\_time\_replay.py}; it writes the schedules, per-draw costs, and summary to \texttt{artifacts/zhao\_normal\_lead\_time\_replay/}.}
 
 \subsection{Latent-Demand Generator Sensitivity}\label{oa:dgp}
 

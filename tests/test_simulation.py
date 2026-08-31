@@ -20,6 +20,24 @@ def test_orders_are_policy_specific_and_not_logged_orders():
     assert not np.array_equal(low.i_end, high.i_end)
 
 
+def test_order_level_lead_times_override_the_fixed_lead_time():
+    demand = np.zeros((1, 4))
+    cfg = ReplayConfig(
+        n_days=4, lead_time_days=1, review_days=(0, 3),
+    )
+    result = replay(
+        demand,
+        np.array([[5.0, 5.0]]),
+        np.array([0.0]),
+        cfg,
+        order_lead_times=np.array([[2, 1]]),
+    )
+
+    assert result.arrivals[0, 1] == 0.0
+    assert result.arrivals[0, 2] == 5.0
+    assert result.conservation_violations == []
+
+
 def test_preexisting_pipeline_is_shared_sunk_commitment():
     demand = np.zeros((1, 4))
     committed = np.array([[0.0, 4.0, 0.0, 0.0]])
