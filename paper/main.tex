@@ -281,6 +281,7 @@ A model that improves median accuracy but miscalibrates the 95th percentile may 
 
 We consider a retailer managing $N$ SKUs under periodic review with a base-stock (order-up-to) replenishment policy, a standard inventory-control rule \citep{Porteus2002}.
 Each SKU $i$ is reviewed every $R$ days with a deterministic replenishment lead time of $L_i$ days, yielding a protection interval of $\text{PI}_i = R + L_i$ days.
+\add{We denote the set of review days for SKU $i$ by $\mathcal R_i$.}
 We use a lost-sales system, where unmet demand leaves the system rather than backlogging. On day $t$, units ordered earlier and scheduled to arrive that day are received first. Together with the on-hand inventory carried into the day, they form the available inventory $I^{\mathrm{avail}}_{it}$. Let $D_{it}$ denote underlying (true) demand, observed sales then are $Y_{it}=\min\{D_{it},I^{\mathrm{avail}}_{it}\}$, leaving $I^{\mathrm{end}}_{it}=(I^{\mathrm{avail}}_{it}-D_{it})^+$ remaining units and $\mathrm{Lost}_{it}=(D_{it}-I^{\mathrm{avail}}_{it})^+$ lost units. On review days, after fulfillment, the retailer observes $\mathrm{IP}_{it}=I^{\mathrm{end}}_{it}+O^{\mathrm{open}}_{it}$, where $O^{\mathrm{open}}_{it}$ denotes the total units ordered earlier that have not yet arrived, and places $Q_{it}=(S_{it}-\mathrm{IP}_{it})^+$ to the target $S_{it}$. Table~\ref{tab:inventory-state-notation} summarizes this notation and timing.
 
 \begin{table}[ht]
