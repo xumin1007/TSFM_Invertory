@@ -1,0 +1,4 @@
+threshold,rho,mean_excess_per_scored_sku_month,excess_pct_logged_protection_demand,mean_excess_per_designated_inflated_day
+point closed-loop advantage,0.0,0.0,0.0,0.0
+95% upper CI below zero,0.2997869744683018,7.932159975286895,14.553338310129028,1.152366576416934
+reproduce calibrated -8.28 pp DiD,1.0,26.459321621145374,48.54559920737261,3.843951454064192

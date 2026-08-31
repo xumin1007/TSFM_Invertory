@@ -190,6 +190,8 @@ def main(argv=None) -> int:
     ap.add_argument("--device", default="mps")
     ap.add_argument("--batch-size", type=int, default=256)
     ap.add_argument("--b", type=int, default=B)
+    ap.add_argument("--save-policy-only", action="store_true",
+                    help="Save fixed policy targets, then stop before replay")
     args = ap.parse_args(argv)
 
     t0 = time.time()
@@ -364,6 +366,24 @@ def main(argv=None) -> int:
             precomp[(arm, alpha)] = (review_days_list, S_arr, S_static_oi)
     print(f"Precomputed S for {len(precomp)} (arm, alpha) combos  "
           f"({time.time()-t0:.0f}s)")
+
+    policy_payload = {
+        "sids": sids.astype("U"), "inv0": inv0, "cost_i": cost_i,
+        "start_date": np.array(str(start_date.date())),
+        "total_days": np.array(total_days),
+        "n_draws": np.array(args.n_draws),
+        "seed": np.array(SEED_BASE),
+    }
+    for (arm, alpha), (review_days, S_arr, static) in precomp.items():
+        prefix = f"{arm.replace('-', '_')}_a{int(round(alpha * 100))}"
+        policy_payload[f"{prefix}_review_days"] = np.asarray(review_days)
+        policy_payload[f"{prefix}_S_arr"] = S_arr
+        for oi, values in static.items():
+            policy_payload[f"{prefix}_static_o{oi}"] = values
+    np.savez_compressed(ART / "fixed_policy_inputs.npz", **policy_payload)
+    print(f"Saved fixed policy inputs to {ART / 'fixed_policy_inputs.npz'}")
+    if args.save_policy_only:
+        return 0
 
     # Per-draw D arrays for hierarchical bootstrap.
     # Key: (arm, alpha, oi, metric) -> (n_draws, n_ser)

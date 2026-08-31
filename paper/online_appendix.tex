@@ -6,8 +6,11 @@
 \usepackage{tikz}
 \usepackage{pgfplots}
 \usepackage{fancyhdr}
+\usepackage{xcolor}
 \pgfplotsset{compat=1.18}
 \OneAndAHalfSpacedXII
+\newcommand{\add}[1]{\textcolor{blue}{#1}}
+\newcommand{\reduce}[1]{\textcolor{red}{#1}\hspace{0.5em}}
 
 \begin{document}
 
@@ -57,8 +60,9 @@ Time Series Foundation Models under Censored Sales''\par}
 Section~EC.1 reports every point estimate and simultaneous interval from the service-level--recensoring grid.
 Section~EC.2 collects the supporting decision-layer, economic-sensitivity, fine-tuning, short-history, and censored-learning results.
 Section~EC.3 reports the latent-demand-generator, protection-interval-dependence, PMF-reconstruction, support-cap binding and sensitivity, and operational-tail-calibration checks added for distributional robustness.
-The main paper's Semi-Synthetic Censoring Experiment presents the cost bridge in three consecutive steps: the exact bridge identity, arm-level total/holding/shortage costs, and component-wise two-way-bootstrap intervals.
-This placement keeps the mechanism derivation adjacent to the principal $2\times2$ result, while the companion supplies the full robustness detail and grid cells used to audit it.
+\reduce{Section~EC.4 proves both policy-dependent censoring propositions and reports known-truth static and closed-loop simulations.}\add{Section~EC.4 reports the hidden-demand threshold sensitivity, and Section~EC.5 proves both policy-dependent censoring propositions and reports known-truth static and closed-loop simulations.}
+\reduce{The main paper's Semi-Synthetic Censoring Experiment presents the cost bridge in three consecutive steps: the exact bridge identity, arm-level total/holding/shortage costs, and component-wise two-way-bootstrap intervals.}\add{The main paper states the two general propositions in Section~3 and presents the empirical cost bridge in the Semi-Synthetic Censoring Experiment through the bridge identity, arm-level total/holding/shortage costs, and component-wise two-way-bootstrap intervals.}
+\reduce{This placement keeps the mechanism derivation adjacent to the principal $2\times2$ result, while the companion supplies the full robustness detail and grid cells used to audit it.}\add{This placement keeps the empirical decomposition adjacent to the principal $2\times2$ result, while Section~EC.5 supplies the proofs and known-truth validations.}
 The repository's peer-review extension manifest records the scripts, exact run parameters, output paths, SHA-256 hashes, and regression tests for the companion tables, margin-cost analysis, and support-cap audits.
 \vspace{1.25em}
 
@@ -168,7 +172,20 @@ $\alpha$ & $\lambda$ & Point & Sim.\ lo & Sim.\ hi & Point & Sim.\ lo & Sim.\ hi
 \end{table}
 
 \clearpage
-\section{Supporting Static Decision-Layer Results}\label{oa:static}
+\section{\reduce{Supporting Static Decision-Layer Results}\add{Supporting Static Newsvendor Cost Results}}\label{oa:static}
+
+\begin{table}[htbp]
+\caption{Analysis-sample flow for the \reduce{Zhao}\add{Chinese-supermarket} and OSA datasets.}\label{tab:oa_sample_flow}
+\centering\small
+\begin{tabular}{p{2.3cm}p{6.3cm}p{4.5cm}}
+\toprule
+\textbf{Dataset} & \textbf{Sample flow} & \textbf{Role in the analysis} \\
+\midrule
+\reduce{Zhao}\add{Chinese supermarket} & \reduce{$2{,}000\rightarrow1{,}836\rightarrow1{,}135$: sampled SKUs $\rightarrow$ rolling-origin common support $\rightarrow$ finite-unit-cost replay sample}\add{$28{,}757\rightarrow17{,}226\rightarrow2{,}000\rightarrow1{,}836\rightarrow1{,}135$: source SKUs $\rightarrow$ at least 100 days and product-unit eligible $\rightarrow$ seed-42 random sample $\rightarrow$ five-origin common support $\rightarrow$ finite-unit-cost sample} & Formal policy-effect inference uses the 1{,}135-series sample. \\
+OSA & $100\rightarrow17$: dataset SKUs $\rightarrow$ replay-eligible after the prespecified 80\% completeness filter & Directional cross-dataset check; no formal policy-effect inference is based on the 17 series. \\
+\bottomrule
+\end{tabular}
+\end{table}
 
 \begin{table}[htbp]
 \caption{Ablation of the hybrid pipeline's three components, evaluated on validation and test windows ($\alpha=0.85$). Each row adds one component cumulatively. $\Delta$\% is relative to GBDT-lean.}\label{tab:oa_ablation}
@@ -250,7 +267,7 @@ Empirical (full) & 0.332 & 101.37 & 0.878 & 0.662 \\
 \end{table}
 
 \begin{table}[htbp]
-\caption{Comparison with DDM on the Zhao validation window ($\alpha=0.85$, $L=1$ day).}\label{tab:oa_ddm}
+\caption{Comparison with DDM on the \reduce{Zhao}\add{Chinese-supermarket} validation window ($\alpha=0.85$, $L=1$ day).}\label{tab:oa_ddm}
 \centering\small
 \begin{tabular}{lcccc}
 \toprule
@@ -264,7 +281,7 @@ DDM                   & 35.95 & 78.87 & 0.975 & 60.5 \\
 \end{table}
 
 \begin{table}[htbp]
-\caption{Static cost robustness to the economic specification on the Zhao validation sample. P3 uses the common $\alpha=0.95$ target; P3m recomputes the target at the SKU-specific margin-implied critical ratio. Reduction is relative to emp-daily.}
+\caption{\reduce{Static cost robustness}\add{Static newsvendor cost robustness} to the economic specification on the \reduce{Zhao}\add{Chinese-supermarket} validation sample. P3 uses the common $\alpha=0.95$ target; P3m recomputes the target at the SKU-specific margin-implied critical ratio. Reduction is relative to emp-daily.}
 \label{tab:oa_margin_cost}
 \centering\small
 \begin{tabular}{llrrr}
@@ -300,7 +317,7 @@ $\boldsymbol{\kappa_h}$ & $\boldsymbol{\alpha_i}$ \textbf{p10} & $\boldsymbol{\a
 \end{table}
 
 The margin-based comparison changes both the economic weights and the SKU-level target rather than proportionally rescaling a fixed critical ratio.
-Chronos-2's lower static cost is retained throughout the evaluated holding-cost range.
+\reduce{Chronos-2's lower static cost is retained throughout the evaluated holding-cost range.}\add{Chronos-2's lower static newsvendor cost is retained throughout the evaluated holding-cost range.}
 
 \begin{figure}[htbp]
 \centering
@@ -395,8 +412,8 @@ Chronos-2's lower static cost is retained throughout the evaluated holding-cost 
 
 This section reports the checks that support the semi-synthetic and protection-interval constructions in the main paper.
 All analyses retain the same 1{,}135 cost-eligible series, five scored origins, two high service levels, origin-specific retuned empirical comparators, and fixed policy support.
-The exact cost-bridge identity, arm-level total/holding/shortage costs, and component-wise bridge intervals are grouped together in the main paper's ``Semi-Synthetic Censoring Experiment'' subsection (Tables ``Arm-level dynamic-cost bridge'' and ``Holding/shortage decomposition'').
-These quantities identify a fixed-policy measurement contrast on the Zhao common support: the 98\% bridge is the exact accounting share within that factorial, while the OSA evidence is a separate directional cross-dataset check.
+\reduce{The exact cost-bridge identity, arm-level total/holding/shortage costs, and component-wise bridge intervals are grouped together in the main paper's ``Semi-Synthetic Censoring Experiment'' subsection (Tables ``Arm-level dynamic-cost bridge'' and ``Holding/shortage decomposition'').}\add{The exact cost-bridge identity, arm-level total/holding/shortage costs, and component-wise bridge intervals are grouped together in the main paper's ``Semi-Synthetic Censoring Experiment'' subsection (Tables ``Arm-level closed-loop replay cost bridge'' and ``Holding/shortage decomposition'').}
+These quantities identify a fixed-policy measurement contrast on the \reduce{Zhao}\add{Chinese-supermarket} common support: the 98\% bridge is the exact accounting share within that factorial, while the OSA evidence is a separate directional cross-dataset check.
 
 \subsection{Latent-Demand Generator Sensitivity}\label{oa:dgp}
 
@@ -446,7 +463,7 @@ Negative binomial     &   988{,}685 & 5.03 & 2 & 16 \\
 \resizebox{\textwidth}{!}{%
 \begin{tabular}{lrrrr}
 \toprule
-\textbf{Generator} & $\boldsymbol{R_D}$ \textbf{static} & $\boldsymbol{R_D}$ \textbf{dynamic} & $\boldsymbol{A_D}$ & \textbf{DiD} \\
+\textbf{Generator} & $\boldsymbol{R_D}$ \reduce{\textbf{static}}\add{\textbf{static newsvendor cost}} & $\boldsymbol{R_D}$ \reduce{\textbf{dynamic}}\add{\textbf{closed-loop replay cost}} & $\boldsymbol{A_D}$ & \textbf{DiD} \\
 \midrule
 Empirical conditional & $-11.59\;[-15.72,-7.35]$ & $-11.12\;[-15.65,-6.15]$ & $+0.47\;[-1.81,+3.65]$ & $-8.28\;[-17.22,-4.23]$ \\
 Poisson               & $-13.15\;[-19.29,-7.09]$ & $-6.94\;[-13.17,+1.41]$  & $+6.21\;[+1.90,+14.58]$ & $-2.54\;[-5.59,-1.14]$ \\
@@ -514,10 +531,10 @@ AR(1) copula, $\rho=0.50$ & Pooled & $-9.55\;[-16.39,-1.73]$ & $+2.15\;[-7.41,+1
 \end{table}
 
 Both alternative PMF reconstructions reproduce the baseline attenuation to within 0.1 percentage point in the pooled estimate.
-Positive temporal dependence produces a different and economically interpretable shift: the static effect continues to favor Chronos-2, while attenuation increases with $\rho$ and the dynamic point estimate weakens.
+\reduce{Positive temporal dependence produces a different and economically interpretable shift: the static effect continues to favor Chronos-2, while attenuation increases with $\rho$ and the dynamic point estimate weakens.}\add{Positive temporal dependence produces a different and economically interpretable shift: the static newsvendor cost effect continues to favor Chronos-2, while attenuation increases with $\rho$ and the closed-loop replay cost point estimate weakens.}
 
 \paragraph{Support-cap audit.}
-The integer support cap is a numerical resolution choice: Zhao uses $v_{\max}=60$ units per day, so an $m$-day convolution has support through $60m$.
+The integer support cap is a numerical resolution choice: \reduce{Zhao}\add{the Chinese-supermarket dataset} uses $v_{\max}=60$ units per day, so an $m$-day convolution has support through $60m$.
 For each daily PMF, probability beyond the highest supplied quantile level is closed at that row's repaired $q_{0.99}$.
 The practical selection rule is to increase the cap until the reported arm-level effect directions are unchanged and the per-series loss differences remain highly correlated with the production setting.
 
@@ -595,5 +612,160 @@ $D$ & Emp-retuned & 0.98 & 76.53 & $-21.47\;[-22.91,-20.01]$ & 23.47 & $25.53\;[
 Chronos-2 has higher operational coverage and lower mean excess units in every demand--service-level cell.
 The coverage difference relative to Emp-retuned ranges from 3.63 to 4.25 percentage points and is similar under logged sales and latent demand.
 These policy-level diagnostics complement aggregate pinball loss by evaluating the tail events that enter shortage exposure directly.
+
+\section{\add{Hidden-Demand Threshold Sensitivity}}\label{oa:hidden-threshold}
+
+\add{The main semi-synthetic comparison evaluates fixed policies at two endpoints: logged sales $Y$ and reconstructed latent demand $D^{(k)}$. To assess how much of the reconstruction is required for the measured result, define}
+\begin{equation}\label{eq:oa-rho-demand}
+\add{D^{(k)}(\rho)=Y+\rho\bigl[D^{(k)}-Y\bigr],\qquad \rho\geq0.}
+\end{equation}
+\add{Thus $\rho=0$ recovers logged sales, $\rho=1$ recovers the baseline empirical-conditional reconstruction, and intermediate values preserve the reconstructed timing and cross-sectional pattern while scaling its magnitude. Forecasts, stock targets, initial inventory, and replay rules remain fixed. Table~\ref{tab:oa-hidden-scaling} reports the complete curve. Confidence intervals use 10{,}000 two-way bootstrap resamples that jointly resample SKU clusters and the same 50 keyed latent-demand draw IDs.}
+
+\begin{table}[htbp]
+\centering
+\caption{\add{Fixed-policy hidden-demand scaling. Excess demand is measured relative to logged sales. Relative cost effects compare Chronos-2 with the origin-retuned empirical policy; negative values favor Chronos-2.}}
+\label{tab:oa-hidden-scaling}
+\scriptsize
+\resizebox{\textwidth}{!}{%
+\begin{tabular}{rrrrrrr}
+\toprule
+\add{$\rho$} & \add{Excess/SKU-month} & \add{Excess/logged PI sales (\%)} & \add{Excess/inflated day} & \add{Static effect (\%)} & \add{Closed-loop effect (\%) [95\% CI]} & \add{DiD vs. $\rho=0$ (pp)} \\
+\midrule
+\add{0.00} & \add{0.00}  & \add{0.00}  & \add{0.00} & \add{$-12.21$} & \add{$-3.46\;[-10.53,+6.41]$} & \add{0.00} \\
+\add{0.10} & \add{2.65}  & \add{4.85}  & \add{0.38} & \add{$-12.69$} & \add{$-5.03\;[-11.49,+3.61]$} & \add{$-1.10$} \\
+\add{0.25} & \add{6.61}  & \add{12.14} & \add{0.96} & \add{$-12.76$} & \add{$-6.86\;[-12.72,+0.76]$} & \add{$-2.85$} \\
+\add{0.30} & \add{7.94}  & \add{14.56} & \add{1.15} & \add{$-12.71$} & \add{$-7.43\;[-13.20,-0.003]$} & \add{$-3.48$} \\
+\add{0.35} & \add{9.26}  & \add{16.99} & \add{1.35} & \add{$-12.64$} & \add{$-7.98\;[-13.63,-0.74]$} & \add{$-4.09$} \\
+\add{0.50} & \add{13.23} & \add{24.27} & \add{1.92} & \add{$-12.41$} & \add{$-9.29\;[-14.59,-2.62]$} & \add{$-5.64$} \\
+\add{0.75} & \add{19.84} & \add{36.41} & \add{2.88} & \add{$-11.99$} & \add{$-10.47\;[-15.33,-4.61]$} & \add{$-7.23$} \\
+\add{1.00} & \add{26.46} & \add{48.55} & \add{3.84} & \add{$-11.59$} & \add{$-11.12\;[-15.54,-5.97]$} & \add{$-8.28$} \\
+\add{1.25} & \add{33.07} & \add{60.68} & \add{4.80} & \add{$-10.95$} & \add{$-11.43\;[-15.44,-6.88]$} & \add{$-9.23$} \\
+\add{1.50} & \add{39.69} & \add{72.82} & \add{5.77} & \add{$-10.14$} & \add{$-11.36\;[-15.04,-7.34]$} & \add{$-9.97$} \\
+\bottomrule
+\end{tabular}%
+}
+\end{table}
+
+\add{The logged-sales point estimate already favors Chronos-2, but its confidence interval includes zero. Linear interpolation of the upper confidence limit between $\rho=0.25$ and $0.30$ gives a detectability threshold of $\rho=0.2998$, corresponding to 7.93 excess units per scored SKU-month, 14.55\% of logged protection-interval sales, and 1.15 excess units per designated inflated day. The first evaluated grid point with a strictly negative upper limit is $\rho=0.30$. The baseline reconstruction at $\rho=1$ reproduces the reported $-8.28$-percentage-point DiD.}
+
+\add{For the static comparison, the signed-overlap identity in Equation~\eqref{eq:oa-signed-overlap} permits a distribution-free continuous lower bound. Because the same latent demand is evaluated at both service levels, we first partition each SKU-month's demand axis at all four policy targets and sum the two service levels' marginal wedge slopes on every segment. We then allocate hidden demand first to positive segments with the largest combined slope, subject to their interval capacities. Generating the observed mean absolute wedge of 7.819 cost units per policy cell requires at least 229.2 physical hidden units across 5{,}675 SKU-month cells (0.0404 per SKU-month, or 0.074\% of logged protection-interval demand). The optimizer uses 13 high-cost marginal segments. This is a deliberately weak lower bound on total hidden demand: it counts only excess that lies between the targets and omits any excess required to reach the lower target. Because the records imply $D\geq Y$ but no finite upper bound on $D$, neither this calculation nor the scaling curve point-identifies unmet demand. They instead show the hidden-demand magnitudes at which the fixed-policy conclusion changes.}
+
+\section{\add{Proofs and Known-Truth Validation of Policy-Dependent Censoring Bias}}\label{oa:known-truth}
+
+\subsection{\add{Proof of Proposition 1 and Static Extensions}}
+
+\proof{\add{Proof of Proposition 1.}}
+\add{Fix a cell $j$ and write $\delta_j=S_j^H-S_j^L\geq0$ and $g_j(x)=c_j(S_j^H,x)-c_j(S_j^L,x)$. Clamp $x$ to the interval between the targets:}
+\begin{equation}\label{eq:oa-clamp}
+\add{\Pi_j(x)=\min\{S_j^H,\max\{S_j^L,x\}\}.}
+\end{equation}
+\add{If $x\leq S_j^L$, direct substitution gives $g_j(x)=h_j\delta_j$; if $S_j^L<x<S_j^H$, it gives $g_j(x)=h_j(S_j^H-x)-p_j(x-S_j^L)$; and if $x\geq S_j^H$, it gives $g_j(x)=-p_j\delta_j$. The three cases, including their common boundary values, are equivalently}
+\begin{equation}\label{eq:oa-gap-clamp}
+\add{g_j(x)=h_j\delta_j-(h_j+p_j)\bigl[\Pi_j(x)-S_j^L\bigr].}
+\end{equation}
+\add{Because $Y_j\leq D_j$, the difference $\Pi_j(D_j)-\Pi_j(Y_j)$ is the length of the intersection $(Y_j,D_j]\cap(S_j^L,S_j^H]$. Hence}
+\begin{equation}\label{eq:oa-clamp-difference}
+\add{\Pi_j(D_j)-\Pi_j(Y_j)=\left[\min\{D_j,S_j^H\}-\max\{Y_j,S_j^L\}\right]^+.}
+\end{equation}
+\add{Subtracting Equation~\eqref{eq:oa-gap-clamp} at $D_j$ from the same equation at $Y_j$ and applying Equation~\eqref{eq:oa-clamp-difference} yields}
+\begin{equation}\label{eq:oa-static-proof}
+\add{g_j(Y_j)-g_j(D_j)=(h_j+p_j)\left[\min\{D_j,S_j^H\}-\max\{Y_j,S_j^L\}\right]^+.}
+\end{equation}
+\add{Summing Equation~\eqref{eq:oa-static-proof} over cells proves the stated identity and $W^{\mathrm{st}}\geq0$. Since $h_j+p_j>0$, the sum is strictly positive exactly when $(Y_j,D_j]$ and $(S_j^L,S_j^H]$ have a positive-length intersection for at least one cell. Finally, $\Delta_Y^{\mathrm{st}}=\Delta_D^{\mathrm{st}}+W^{\mathrm{st}}$. Conditional on $\Delta_D^{\mathrm{st}}<0$, the logged-sales evaluation selects $L$ rather than $H$ exactly when $\Delta_Y^{\mathrm{st}}>0$, or equivalently $W^{\mathrm{st}}> -\Delta_D^{\mathrm{st}}$; equality gives a tie. This proves every claim in Proposition~1. \qed}
+\endproof
+
+\paragraph{\add{Equivalent tail-probability condition.}}
+\add{With common targets $S^H>S^L$, common costs, $\delta=S^H-S^L$, critical ratio $\alpha=p/(h+p)$, and $\Pi(x)=\min\{S^H,\max\{S^L,x\}\}$, the layer-cake identity gives}
+\begin{equation}\label{eq:oa-layer-cake}
+\add{\Pi(X)-S^L=\int_{S^L}^{S^H}\mathbf 1\{X>u\}\,du.}
+\end{equation}
+\add{Define the average tail probability between the targets as}
+\begin{equation}\label{eq:oa-average-tail}
+\add{\bar q_X=\frac{1}{\delta}\int_{S^L}^{S^H}\Pr(X>u)\,du.}
+\end{equation}
+\add{Taking expectations in Equations~\eqref{eq:oa-gap-clamp} and~\eqref{eq:oa-layer-cake}, and interchanging expectation and the bounded integral, yields}
+\begin{equation}\label{eq:oa-tail-condition}
+\add{\mathbb E[g(X)]=(h+p)\delta\bigl[(1-\alpha)-\bar q_X\bigr].}
+\end{equation}
+\add{Therefore $H$ is preferred under $D$ and $L$ under $Y$ exactly when $\bar q_Y<1-\alpha<\bar q_D$, with equality on either side producing a tie. This equivalent condition clarifies why the overall censoring rate is insufficient: only censored probability mass crossing thresholds between the targets changes their comparison.}
+
+\paragraph{\add{Targets that cross across cells.}}
+\add{If two policies' targets cross across cells, let $S_j^+=\max\{S_{1j},S_{0j}\}$, $S_j^-=\min\{S_{1j},S_{0j}\}$, and $\sigma_j=\operatorname{sgn}(S_{1j}-S_{0j})$. The exact signed extension is}
+\begin{equation}\label{eq:oa-signed-overlap}
+\add{W_{1-0}^{\mathrm{st}}=\sum_j\sigma_j(h_j+p_j)\left[\min\{D_j,S_j^+\}-\max\{Y_j,S_j^-\}\right]^+.}
+\end{equation}
+\add{To verify Equation~\eqref{eq:oa-signed-overlap}, apply Proposition~1 cellwise when $\sigma_j=1$, interchange the two policies when $\sigma_j=-1$, and note that both sides vanish when $\sigma_j=0$. Consequently, an average target ordering alone does not determine the bias direction; the cell-level signed overlaps must be computed.}
+
+\subsection{\add{Known-Truth Static Simulation}}
+
+\add{We first verify the pathwise result without sampling error. Latent demand is $D\sim\operatorname{Poisson}(10)$, $h=1$, $p=19$ ($\alpha=0.95$), and the fixed targets are $S^L=12$ and $S^H=15$. Logged sales are $Y=\min\{D,c\}$ for alternative availability caps $c$. Negative high-minus-low cost differences favor the higher target.}
+
+\begin{table}[htbp]
+\centering
+\caption{\add{Exact known-truth static comparison. The true high-minus-low expected cost difference is $-5.549$ for every row.}}
+\label{tab:oa-known-truth-static}
+\small
+\begin{tabular}{rrrrr}
+\toprule
+\add{Cap $c$} & \add{Censored outcomes (\%)} & \add{$\Delta_Y^{\mathrm{st}}$} & \add{$W^{\mathrm{st}}$} & \add{Ranking reversal} \\
+\midrule
+\add{15} & \add{4.874}  & \add{$-5.549$} & \add{0.000} & \add{No} \\
+\add{14} & \add{8.346}  & \add{$-3.880$} & \add{1.669} & \add{No} \\
+\add{13} & \add{13.554} & \add{$-1.169$} & \add{4.380} & \add{No} \\
+\add{12} & \add{20.844} & \add{$+3.000$} & \add{8.549} & \add{Yes} \\
+\add{11} & \add{30.322} & \add{$+3.000$} & \add{8.549} & \add{Yes} \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\add{Table~\ref{tab:oa-known-truth-static} illustrates both parts of the result. At $c=15$, 4.874\% of outcomes are censored, but all hidden demand lies above both targets and the policy comparison is unchanged. As the cap enters the interval between the targets, the overlap wedge grows. At $c=12$, $W^{\mathrm{st}}=8.549$ exceeds the true 5.549-unit advantage, and the measured ranking reverses. The computed wedge equals Equation~\eqref{eq:oa-static-proof} to numerical precision in every row.}
+
+\subsection{\add{Proof of Proposition 2}}
+
+\proof{\add{Proof of Proposition 2.}}
+\add{For each fixed policy $a$, total replay cost satisfies $C_a(X)=\mathcal H_a(X)+\mathcal P_a(X)$. Expanding $W^{\mathrm{CL}}=\Delta_Y^{\mathrm{CL}}-\Delta_D^{\mathrm{CL}}$ and collecting policy-specific changes gives}
+\begin{equation}\label{eq:oa-closed-loop-proof}
+\begin{aligned}
+\add{W^{\mathrm{CL}}}
+&\add{=\bigl[\mathcal H_H(Y)-\mathcal H_H(D)\bigr]-\bigl[\mathcal H_L(Y)-\mathcal H_L(D)\bigr]}\\
+&\quad\add{+\bigl[\mathcal P_H(Y)-\mathcal P_H(D)\bigr]-\bigl[\mathcal P_L(Y)-\mathcal P_L(D)\bigr]}\\
+&\add{=(G_H-G_L)+(-U_H)-(-U_L)}\\
+&\add{=(U_L-U_H)+(G_H-G_L).}
+\end{aligned}
+\end{equation}
+\add{This proves the cost-bridge identity. By definition, logged sales shift the comparison toward $L$ exactly when $\Delta_Y^{\mathrm{CL}}>\Delta_D^{\mathrm{CL}}$, which is equivalent to $W^{\mathrm{CL}}>0$. If $\Delta_D^{\mathrm{CL}}<0$, reversal in favor of $L$ means $\Delta_Y^{\mathrm{CL}}>0$. Since $\Delta_Y^{\mathrm{CL}}=\Delta_D^{\mathrm{CL}}+W^{\mathrm{CL}}$, this occurs exactly when $W^{\mathrm{CL}}> -\Delta_D^{\mathrm{CL}}$; equality gives a tie. \qed}
+\endproof
+
+\add{The proof requires neither target ordering nor a sign restriction on $W^{\mathrm{CL}}$. Unlike the static setting, changing the evaluated demand path can change each policy's entire inventory and order-pipeline trajectory. Proposition~2 is therefore an exact, directly computable condition rather than a monotonicity result. It applies to absolute cost differences; relative percentage effects with changing denominators do not satisfy the same additive identity.}
+
+\subsection{\add{Known-Truth Closed-Loop Simulation}}
+
+\add{We verify the condition in a controlled lost-sales system using the same replay timing as the main analysis. Using seed 42, we generate 10{,}000 independent 360-day paths with daily $\operatorname{Poisson}(1.5)$ demand, discard the first 60 days, review inventory every seven days, and use a one-day lead time. The candidate base-stock targets are $S^L=16$ and $S^H=20$, with $h=1$ and $p=19$. To create policy-dependent transaction logs, a legacy base-stock policy with target $S^{\log}$ faces latent demand; its fulfilled demand becomes logged sales. We then replay both candidate policies on the latent and logged paths.}
+
+\clearpage
+\begin{table}[!htbp]
+\centering
+\caption{\add{Known-truth closed-loop comparison. The latent-demand high-minus-low cost difference is $-2.463$ (95\% Monte Carlo interval $[-2.573,-2.353]$) in every row. Intervals are 95\% Monte Carlo intervals across 10{,}000 paired paths.}}
+\label{tab:oa-known-truth-closed-loop}
+\scriptsize
+\resizebox{\textwidth}{!}{%
+\begin{tabular}{rrrrrl}
+\toprule
+\add{$S^{\log}$} & \add{Censored days (\%)} & \add{$C_H(Y)-C_L(Y)$ [95\% CI]} & \add{$W^{\mathrm{CL}}$ [95\% CI]} & \add{Threshold crossed} & \add{Measured ranking} \\
+\midrule
+\add{22} & \add{0.009} & \add{$-2.463\;[-2.573,-2.353]$} & \add{$0.000\;[0.000,0.000]$} & \add{No}  & \add{$H$ preferred} \\
+\add{20} & \add{0.045} & \add{$-2.463\;[-2.573,-2.353]$} & \add{$0.000\;[0.000,0.000]$} & \add{No}  & \add{$H$ preferred} \\
+\add{19} & \add{0.096} & \add{$-1.987\;[-2.085,-1.889]$} & \add{$0.476\;[0.457,0.495]$} & \add{No}  & \add{$H$ preferred} \\
+\add{18} & \add{0.196} & \add{$-1.041\;[-1.120,-0.963]$} & \add{$1.422\;[1.380,1.463]$} & \add{No}  & \add{$H$ preferred} \\
+\add{17} & \add{0.384} & \add{$+0.756\;[0.708,0.804]$}  & \add{$3.219\;[3.147,3.291]$} & \add{Yes} & \add{$L$ preferred} \\
+\add{16} & \add{0.716} & \add{$+4.000\;[4.000,4.000]$}  & \add{$6.463\;[6.353,6.573]$} & \add{Yes} & \add{$L$ preferred} \\
+\bottomrule
+\end{tabular}%
+}
+\end{table}
+
+\add{The logging policies at 22 and 20 censor demand only beyond both candidates' effective protection and therefore leave their comparison unchanged. Lowering $S^{\log}$ progressively increases the wedge. At $S^{\log}=17$, $W^{\mathrm{CL}}=3.219$ exceeds the true 2.463-unit advantage: logged sales select the lower target even though latent demand selects the higher target. The reversal occurs with only 0.384\% of scored days censored, reinforcing that the location and cost of hidden demand matter more than the raw censoring frequency. This simulation establishes the possibility of reversal under known truth; the Chinese-supermarket application compresses the Chronos-2 advantage but does not reverse its point-estimate ranking.}
+
+\add{The reproducible script writes the exact static results and the paired closed-loop results to \texttt{artifacts/known\_truth\_censoring/}.}
 
 \end{document}
